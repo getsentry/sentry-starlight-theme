@@ -40,6 +40,8 @@
 - Keep Craft target IDs, version bump files, and pack workflow aligned; verify with `pnpm release:check`.
 - Do not edit generated `apps/playground/.astro/` or `apps/playground/dist/`.
 - Use the playground for visual/theme behavior changes before changing release files.
+- Put shared theme styling in `src/styles/index.css`, not in Astro component `<style>` blocks or inline `style` attributes. Component-scoped CSS can load after first paint and cause visible flicker in the playground and downstream docs sites.
+- Keep Starlight component overrides in `src/components/` focused on markup and composition. If an override needs layout or visual styles, add stable classes and style them from `src/styles/index.css`.
 
 ## Release Notes
 

@@ -4,6 +4,10 @@ export { monochromeCodeTheme } from "./themes/monochrome";
 
 const packageName = "@sentry/starlight-theme";
 const themeCss = `${packageName}/styles/index.css`;
+const footerComponent = `${packageName}/components/Footer.astro`;
+const headerComponent = `${packageName}/components/Header.astro`;
+const mobileMenuFooterComponent = `${packageName}/components/MobileMenuFooter.astro`;
+const paginationComponent = `${packageName}/components/Pagination.astro`;
 const themeSelectComponent = `${packageName}/components/ThemeSelect.astro`;
 
 type ComponentOverrides = NonNullable<StarlightUserConfig["components"]>;
@@ -61,6 +65,31 @@ export function sentryStarlightTheme({
     hooks: {
       "config:setup"({ config, updateConfig, logger }) {
         const components: ComponentOverrides = { ...(config.components ?? {}) };
+
+        setThemeComponent({
+          components,
+          component: "Header",
+          componentPath: headerComponent,
+          logger,
+        });
+        setThemeComponent({
+          components,
+          component: "Footer",
+          componentPath: footerComponent,
+          logger,
+        });
+        setThemeComponent({
+          components,
+          component: "MobileMenuFooter",
+          componentPath: mobileMenuFooterComponent,
+          logger,
+        });
+        setThemeComponent({
+          components,
+          component: "Pagination",
+          componentPath: paginationComponent,
+          logger,
+        });
 
         if (hideThemeSelect) {
           if (components.ThemeSelect) {
@@ -174,4 +203,30 @@ function buildExpressiveCodeConfig(
 
 function dedupeCss(css: NonNullable<StarlightUserConfig["customCss"]>) {
   return css.filter((item, index) => css.indexOf(item) === index);
+}
+
+function setThemeComponent({
+  components,
+  component,
+  componentPath,
+  logger,
+}: {
+  components: ComponentOverrides;
+  component: string;
+  componentPath: string;
+  logger: {
+    warn(message: string): void;
+  };
+}) {
+  if (components[component]) {
+    logger.warn(
+      `A \`<${component}>\` component override is already defined in your Starlight configuration.`,
+    );
+    logger.warn(
+      `To use ${packageName}'s ${component} design, remove that override or render ${componentPath}.`,
+    );
+    return;
+  }
+
+  components[component] = componentPath;
 }

@@ -55,8 +55,8 @@
   --sl-color-text-accent: #fff;
   --sl-color-text-invert: #000;
   --sl-color-bg: var(--ve-bg);
-  --sl-color-bg-nav: rgba(0, 0, 0, 0.84);
-  --sl-color-bg-sidebar: rgba(5, 5, 5, 0.96);
+  --sl-color-bg-nav: var(--ve-bg-soft);
+  --sl-color-bg-sidebar: var(--ve-bg);
   --sl-color-bg-inline-code: rgba(255, 255, 255, 0.08);
   --sl-color-bg-accent: #fff;
   --sl-color-hairline-light: var(--ve-line-soft);
@@ -90,6 +90,7 @@
   --sl-text-h2: 1.5rem;
   --sl-text-h3: 1.1rem;
   --sl-text-h4: 1rem;
+  --ve-page-top: 1.35rem;
 }
 
 html,
@@ -125,6 +126,33 @@ header.header {
 
 header.header > .header {
   border-bottom: 0;
+}
+
+.sentry-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sl-nav-gap);
+  height: 100%;
+}
+
+.title-wrapper {
+  overflow: clip;
+  padding: 0.25rem;
+  margin: -0.25rem;
+  min-width: 0;
+}
+
+.sentry-header-actions {
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sentry-header-secondary {
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .site-title {
@@ -164,9 +192,15 @@ button[data-open-modal]:hover {
 }
 
 button[data-open-modal] kbd {
-  border: 1px solid var(--ve-line);
-  background: #000;
+  border: 0;
+  background: transparent;
   color: var(--ve-text-tertiary);
+}
+
+button[data-open-modal] kbd kbd {
+  border: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .main-frame {
@@ -194,7 +228,7 @@ button[data-open-modal] kbd {
 }
 
 main > .content-panel:first-child {
-  padding-top: 2.8rem;
+  padding-top: var(--ve-page-top);
   padding-bottom: 0.5rem;
 }
 
@@ -208,16 +242,17 @@ main > .content-panel:first-child h1 {
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.25;
+  margin-top: 0;
 }
 
 .sidebar-pane {
-  border-inline-end-color: var(--ve-line);
+  border-inline-end: 0;
   background: var(--sl-color-bg-sidebar);
 }
 
 .sidebar-content {
   gap: 0.75rem;
-  padding-top: 1.15rem;
+  padding-top: var(--ve-page-top);
 }
 
 .top-level > li + li {
@@ -272,7 +307,11 @@ main > .content-panel:first-child h1 {
 }
 
 .right-sidebar {
-  border-inline-start-color: var(--ve-line);
+  border-inline-start: 0;
+}
+
+.right-sidebar-panel {
+  padding-top: var(--ve-page-top);
 }
 
 .right-sidebar-panel h2 {
@@ -302,6 +341,18 @@ starlight-menu-button button {
 starlight-menu-button[aria-expanded="true"] button {
   background: var(--ve-text-secondary);
   color: #000;
+}
+
+.mobile-preferences {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--sl-color-gray-6);
+  column-gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.mobile-preferences:empty {
+  display: none;
 }
 
 .sl-markdown-content {
@@ -374,19 +425,18 @@ starlight-menu-button[aria-expanded="true"] button {
 }
 
 .sl-markdown-content code:not(:where(.not-content *)) {
-  border: 1px solid var(--ve-line);
+  border: 0;
   border-radius: 5px;
-  background: var(--sl-color-bg-inline-code);
-  color: var(--ve-text);
+  background: var(--ve-code-bg);
+  color: #f5f5f5;
   font-size: var(--sl-text-code-sm);
   overflow-wrap: anywhere;
-  padding: 0.08rem 0.32rem;
+  padding: 0.1rem 0.34rem;
   word-break: break-word;
 }
 
 .sl-markdown-content :is(h1, h2, h3, h4, h5, h6) code {
-  border-color: var(--ve-line);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ve-code-bg);
 }
 
 .sl-markdown-content blockquote:not(:where(.not-content *)) {
@@ -415,7 +465,7 @@ starlight-menu-button[aria-expanded="true"] button {
 .sl-markdown-content table:not(:where(.not-content *)) {
   display: table;
   width: 100%;
-  border: 1px solid var(--ve-line);
+  border: 1px solid var(--ve-surface-raised);
   border-collapse: separate;
   border-radius: 8px;
   border-spacing: 0;
@@ -433,8 +483,62 @@ starlight-menu-button[aria-expanded="true"] button {
 }
 
 .sl-markdown-content :is(th, td):not(:where(.not-content *)) {
-  border-bottom-color: var(--ve-line);
+  border-bottom-color: var(--ve-surface-raised);
   padding: 0.82rem 0.95rem;
+}
+
+.sentry-key-value-list {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.sentry-key-value-list > div {
+  padding: 0.2rem 0;
+}
+
+.sentry-key-value-list dt,
+.sentry-key-value-list dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.sentry-key-value-list dt {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  color: var(--ve-text);
+  font-family: var(--__sl-font-mono);
+  font-size: var(--sl-text-code-sm);
+  font-weight: 650;
+}
+
+.sentry-key-value-list dd {
+  margin-top: 0.12rem;
+  color: var(--ve-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.sentry-property-meta {
+  color: var(--ve-text-tertiary);
+  font-family: var(--__sl-font);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.sentry-key-value-list dd > :first-child {
+  margin-top: 0;
+}
+
+.sentry-key-value-list dd > :last-child {
+  margin-bottom: 0;
+}
+
+.sentry-key-value-list dt code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
 }
 
 .sl-markdown-content .expressive-code {
@@ -466,8 +570,8 @@ starlight-menu-button[aria-expanded="true"] button {
 .expressive-code .frame .header {
   --ve-code-dot: radial-gradient(
     circle at 0.31rem 50%,
-    transparent 0 0.2rem,
-    #bdbdbd 0.21rem 0.31rem,
+    transparent 0 0.22rem,
+    rgba(245, 245, 245, 0.72) 0.23rem 0.27rem,
     transparent 0.32rem
   );
   display: flex;
@@ -494,6 +598,7 @@ starlight-menu-button[aria-expanded="true"] button {
 
 .expressive-code .frame:not(.has-title) .copy {
   top: 0.85rem;
+  z-index: 1;
 }
 
 .expressive-code .frame.has-title:not(.is-terminal) .title {
@@ -535,6 +640,14 @@ starlight-menu-button[aria-expanded="true"] button {
   background: transparent;
   line-height: 1;
   padding: 0;
+}
+
+.expressive-code .frame.is-terminal:not(.has-title) .header {
+  display: none;
+}
+
+.expressive-code .frame.is-terminal:not(.has-title) .copy {
+  top: 0.85rem;
 }
 
 .expressive-code pre {
@@ -712,7 +825,7 @@ starlight-menu-button[aria-expanded="true"] button {
   }
 
   main > .content-panel:first-child {
-    padding-top: 2.1rem;
+    padding-top: var(--ve-page-top);
   }
 
   .api-link-card {
@@ -724,5 +837,16 @@ starlight-menu-button[aria-expanded="true"] button {
     max-width: 100%;
     overflow-x: auto;
     white-space: nowrap;
+  }
+
+  .sentry-key-value-list > div {
+    padding: 0.18rem 0;
+  }
+}
+
+@media (min-width: 50rem) {
+  .sentry-header {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(16rem, 24rem);
   }
 }

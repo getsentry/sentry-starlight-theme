@@ -1,0 +1,25 @@
+---
+import config from "virtual:starlight/user-config";
+
+import LanguageSelect from "virtual:starlight/components/LanguageSelect";
+import Search from "virtual:starlight/components/Search";
+import SiteTitle from "virtual:starlight/components/SiteTitle";
+import ThemeSelect from "virtual:starlight/components/ThemeSelect";
+
+const shouldRenderSearch =
+  config.pagefind ||
+  config.components.Search !== "@astrojs/starlight/components/Search.astro";
+---
+
+<div class="header sentry-header">
+  <div class="title-wrapper sl-flex">
+    <SiteTitle />
+  </div>
+  <div class="sentry-header-actions sl-flex print:hidden">
+    {shouldRenderSearch && <Search />}
+    <div class="sl-hidden md:sl-flex sentry-header-secondary">
+      <ThemeSelect />
+      <LanguageSelect />
+    </div>
+  </div>
+</div>
