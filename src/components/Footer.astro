@@ -3,7 +3,15 @@ import { Icon } from "@astrojs/starlight/components";
 import Pagination from "virtual:starlight/components/Pagination";
 import config from "virtual:starlight/user-config";
 
-const socialLinks = config.social || [];
+const socialLinks = Array.isArray(config.social)
+  ? config.social
+  : config.social && typeof config.social === "object"
+    ? Object.entries(config.social).map(([icon, href]) => ({
+        href: String(href),
+        icon,
+        label: icon,
+      }))
+    : [];
 ---
 
 <footer>
