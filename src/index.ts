@@ -15,6 +15,12 @@ type ExpressiveCodeStyleOverrides = Record<string, unknown> & {
   frames?: Record<string, unknown>;
 };
 
+interface HeadTag {
+  tag: string;
+  attrs?: Record<string, string | boolean | undefined>;
+  content?: string;
+}
+
 interface StarlightUserConfig {
   customCss?: string[];
   components?: Record<string, string | undefined>;
@@ -23,6 +29,7 @@ interface StarlightUserConfig {
     | (Record<string, unknown> & {
         styleOverrides?: ExpressiveCodeStyleOverrides;
       });
+  head?: HeadTag[];
 }
 
 interface StarlightPlugin {
@@ -71,6 +78,19 @@ export function sentryStarlightTheme({
         updateConfig({
           customCss: dedupeCss([themeCss, ...(config.customCss ?? [])]),
           components,
+          head: [
+            ...(config.head ?? []),
+            // Prevent white FOUC before CSS loads by signaling dark color
+            // scheme at HTML-parse time and inlining a black background.
+            {
+              tag: "meta",
+              attrs: { name: "color-scheme", content: "dark" },
+            },
+            {
+              tag: "style",
+              content: "html{background:#000}",
+            },
+          ],
           expressiveCode:
             config.expressiveCode === false
               ? false
