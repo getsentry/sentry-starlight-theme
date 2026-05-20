@@ -1,0 +1,9 @@
+node_modules
+dist
+.astro
+**/.astro
+artifacts
+coverage
+.DS_Store
+*.tsbuildinfo
+*.tgz

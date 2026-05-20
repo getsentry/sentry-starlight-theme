@@ -1,0 +1,50 @@
+---
+title: Code Fixtures
+description: Editor frames, terminal frames, diffs, and long-line behavior.
+---
+
+Use this page for Expressive Code and markdown code block checks.
+
+## JavaScript
+
+```ts title="theme-fixture.ts"
+export interface EvaluationResult {
+  name: string;
+  score: number;
+  metadata?: Record<string, unknown>;
+}
+
+export function summarize(results: EvaluationResult[]) {
+  return results.map((result) => ({
+    label: result.name,
+    passed: result.score >= 0.8,
+  }));
+}
+```
+
+## Terminal
+
+```sh title="Terminal"
+pnpm --filter @sentry/starlight-theme-playground dev
+pnpm run test
+```
+
+## Diff
+
+```diff title="theme.css"
+ .sidebar a {
+-  color: var(--ve-text-tertiary);
++  color: var(--ve-text-secondary);
+ }
+```
+
+## Long Line
+
+```ts
+const longValue =
+  "https://example.sentry.io/organizations/sentry/issues/?project=123456789&query=is%3Aunresolved%20assigned%3Ame%20level%3Aerror%20environment%3Aproduction";
+```
+
+## Plain Markdown Pre
+
+    This indented block checks Starlight's plain markdown pre styling outside an Expressive Code frame.

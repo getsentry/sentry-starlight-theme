@@ -1,0 +1,8 @@
+node_modules
+apps/playground/dist
+.astro
+**/.astro
+coverage
+artifacts
+*.tgz
+pnpm-lock.yaml

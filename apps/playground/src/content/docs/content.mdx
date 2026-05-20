@@ -1,0 +1,72 @@
+---
+title: Content Fixtures
+description: Typography, tables, lists, cards, quotes, and semantic content.
+---
+
+This page exercises the default content surface that Sentry docs sites use most often. It should remain calm, dense, and easy to scan.
+
+## Paragraphs And Links
+
+Documentation pages usually mix short conceptual paragraphs with precise implementation details. Links should be visible without pulling too much attention from surrounding text, like this reference to [Sentry](https://sentry.io/).
+
+Inline code should hold up inside dense text: `pnpm --filter @sentry/starlight-theme-playground dev`. Long tokens should wrap instead of widening the page: `SENTRY_EXAMPLE_ENVIRONMENT_VARIABLE_WITH_A_REALLY_LONG_NAME`.
+
+## Lists
+
+- Keep spacing compact enough for reference docs.
+- Preserve contrast for secondary text.
+- Avoid layout shifts when active sidebar links change.
+
+1. Install the theme package.
+2. Add the plugin to Starlight.
+3. Start the playground when changing styles.
+
+## Aside
+
+:::note
+This note checks Starlight's aside styling against the monochrome palette.
+:::
+
+:::caution
+This caution should remain readable even though the theme maps semantic colors to a restrained palette.
+:::
+
+## Quote
+
+> Good documentation makes the common path obvious and the uncommon path discoverable.
+
+## Table
+
+| Surface    | Purpose           | Risk                  |
+| ---------- | ----------------- | --------------------- |
+| Navigation | Site orientation  | Active state contrast |
+| Markdown   | Long-form reading | Paragraph density     |
+| Code       | Copyable examples | Horizontal overflow   |
+| Tables     | API details       | Mobile overflow       |
+
+## Cards
+
+<div class="fixture-grid not-content">
+  <div class="fixture-panel">
+    <strong>Navigation</strong>
+    <span>
+      Check current page states, hover styles, and right-sidebar headings.
+    </span>
+  </div>
+  <div class="fixture-panel">
+    <strong>Responsive</strong>
+    <span>
+      Resize the viewport and confirm content never expands beyond the page.
+    </span>
+  </div>
+</div>
+
+## Heading Depth
+
+### Third-Level Heading
+
+Text under an `h3` should feel connected to the section without competing with `h2` headings.
+
+#### Fourth-Level Heading
+
+Smaller headings should still be legible in API-heavy pages.

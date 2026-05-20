@@ -1,0 +1,11 @@
+minVersion: 0.23.1
+changelogPolicy: none
+preReleaseCommand: bash scripts/craft-pre-release.sh
+targets:
+  - name: npm
+    id: "@sentry/starlight-theme"
+    access: public
+    includeNames: /^sentry-starlight-theme-\d.*\.tgz$/
+  - name: github
+    tagPrefix: v
+    includeNames: /^$/

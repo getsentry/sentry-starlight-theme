@@ -1,0 +1,93 @@
+{
+  "name": "@sentry/starlight-theme",
+  "version": "0.0.0",
+  "description": "Sentry's shared Astro Starlight theme.",
+  "license": "Apache-2.0",
+  "author": "Sentry",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./components/*.astro": "./src/components/*.astro",
+    "./styles/index.css": "./src/styles/index.css",
+    "./themes/monochrome": "./src/themes/monochrome.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "astro:check": "pnpm --filter @sentry/starlight-theme-playground check",
+    "build": "pnpm run typecheck",
+    "dev": "pnpm --filter @sentry/starlight-theme-playground dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "pnpm run lint:eslint && pnpm run format:check",
+    "lint:eslint": "eslint \"**/*.{js,mjs,ts,astro}\"",
+    "lint:fix": "eslint \"**/*.{js,mjs,ts,astro}\" --fix && pnpm run format",
+    "pack:dry": "pnpm pack --dry-run",
+    "playground:build": "pnpm --filter @sentry/starlight-theme-playground build",
+    "playground:preview": "pnpm --filter @sentry/starlight-theme-playground preview",
+    "prepare": "node ./scripts/install-git-hooks.mjs",
+    "release:check": "node ./scripts/check-release-config.mjs",
+    "test": "pnpm run release:check && pnpm run typecheck && pnpm run astro:check && pnpm run playground:build && pnpm run pack:dry",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@astrojs/starlight": ">=0.39.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/starlight": "^0.39.2",
+    "@eslint/js": "^10.0.1",
+    "astro": "^6.3.5",
+    "eslint": "^10.4.0",
+    "eslint-plugin-astro": "^1.7.0",
+    "globals": "^17.6.0",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.8.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.59.4"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "keywords": [
+    "astro",
+    "starlight",
+    "starlight-theme",
+    "sentry",
+    "documentation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getsentry/sentry-starlight-theme.git"
+  },
+  "bugs": {
+    "url": "https://github.com/getsentry/sentry-starlight-theme/issues"
+  },
+  "homepage": "https://github.com/getsentry/sentry-starlight-theme#readme",
+  "packageManager": "pnpm@10.33.2",
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged --concurrent false"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,astro}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,json,jsonc,md,mdx,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

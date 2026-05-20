@@ -1,0 +1,44 @@
+---
+title: Sentry Starlight Theme
+description: A local playground for the shared Sentry Starlight theme.
+---
+
+This playground exists to make theme changes visible while developing this package. It uses the local workspace package, so edits to `src/styles/index.css`, `src/index.ts`, and exported components are picked up by Astro during development.
+
+## What To Check
+
+Use this page for broad layout checks. The other fixture pages focus on markdown content and code blocks.
+
+<div class="fixture-grid not-content">
+  <a class="fixture-panel" href="/content/">
+    <strong>Content fixtures</strong>
+    <span>
+      Headings, tables, quotes, lists, asides, cards, and long inline code.
+    </span>
+  </a>
+  <a class="fixture-panel" href="/code/">
+    <strong>Code fixtures</strong>
+    <span>
+      Editor frames, terminal frames, long lines, diffs, and copy controls.
+    </span>
+  </a>
+</div>
+
+## Design Notes
+
+The theme is intentionally dark-only. The Starlight theme selector is replaced with an empty component by default, while project-level `customCss` remains available for small product-specific adjustments.
+
+```js title="astro.config.mjs"
+import starlight from "@astrojs/starlight";
+import sentryStarlightTheme from "@sentry/starlight-theme";
+import { defineConfig } from "astro/config";
+
+export default defineConfig({
+  integrations: [
+    starlight({
+      title: "My Sentry project",
+      plugins: [sentryStarlightTheme()],
+    }),
+  ],
+});
+```
