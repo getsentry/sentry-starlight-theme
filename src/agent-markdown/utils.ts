@@ -269,31 +269,33 @@ function joinBase(base: string, pathname: string) {
 }
 
 function stripLeadingH1(markdown: string, title: string) {
-  const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return markdown.replace(
-    new RegExp(`^\\s*#\\s+${escapedTitle}\\s*\\n+`, "i"),
-    "",
-  );
+  const lines = markdown.replace(/^\s+/, "").split("\n");
+  const firstLine = lines[0]?.replace(/^#\s+/, "").trim();
+
+  if (firstLine?.toLowerCase() !== title.trim().toLowerCase()) {
+    return markdown;
+  }
+
+  return lines.slice(1).join("\n").replace(/^\n+/, "");
 }
 
 function cleanSourceMarkdown(markdown: string) {
-  return applyOutsideFencedCode(markdown, (segment) =>
-    segment
+  return applyOutsideFencedCode(markdown, (segment) => {
+    const normalized = segment
       .replace(/^import\s.+$/gm, "")
       .replace(/^export\s.+$/gm, "")
       .replace(/\{"\s+"\}/g, " ")
       .replace(/<code\b[^>]*>([\s\S]*?)<\/code>/gi, (_match, text) => {
-        return `\`${stripHtml(String(text)).trim()}\``;
+        return `\`${extractHtmlFragmentText(String(text)).trim()}\``;
       })
       .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_match, attrs, text) => {
         const href = String(attrs).match(/\bhref=(["'])([^"']+)\1/i)?.[2];
-        const label = stripHtml(String(text)).trim();
+        const label = extractHtmlFragmentText(String(text)).trim();
         return href ? `[${label}](${href})` : label;
-      })
-      .replace(/<\/?(?:div|span|strong|em|b|i|dl|dt|dd)\b[^>]*>/gi, "")
-      .replace(/<\/?[A-Z][A-Za-z0-9.:-]*\b[^>]*>/g, "")
-      .replace(/<[A-Z][A-Za-z0-9.:-]*\b[^>]*\/>/g, ""),
-  );
+      });
+
+    return renderSourceFragment(parse(normalized) as Node);
+  });
 }
 
 function applyOutsideFencedCode(
@@ -315,8 +317,68 @@ function applyOutsideFencedCode(
   return normalizeMarkdown(result);
 }
 
-function stripHtml(value: string) {
-  return value.replace(/<[^>]+>/g, "");
+function extractHtmlFragmentText(value: string) {
+  return getTextContent(parse(value) as Node);
+}
+
+function renderSourceFragment(node: Node): string {
+  if (node.type === TEXT_NODE) {
+    return (node as TextNode).value;
+  }
+
+  if (node.type !== ELEMENT_NODE && !("children" in node)) {
+    return "";
+  }
+
+  const element = node as ElementNode;
+  const name = element.name?.toLowerCase();
+
+  if (
+    name &&
+    [
+      "script",
+      "style",
+      "button",
+      "svg",
+      "iframe",
+      "object",
+      "embed",
+      "noscript",
+    ].includes(name)
+  ) {
+    return "";
+  }
+
+  if (name === "br") {
+    return "\n";
+  }
+
+  if (name === "a") {
+    const text = renderSourceChildren(element).replace(/\s+/g, " ").trim();
+    const href = element.attributes.href;
+    return href ? `[${text}](${href})` : text;
+  }
+
+  if (name === "code" && element.parent?.type !== ELEMENT_NODE) {
+    return `\`${getTextContent(element).trim()}\``;
+  }
+
+  if (
+    name === "code" &&
+    (element.parent as ElementNode).name?.toLowerCase() !== "pre"
+  ) {
+    return `\`${getTextContent(element).trim()}\``;
+  }
+
+  return renderSourceChildren(element);
+}
+
+function renderSourceChildren(node: Node): string {
+  if (!("children" in node)) {
+    return "";
+  }
+
+  return (node.children as Node[]).map(renderSourceFragment).join("");
 }
 
 function htmlToMarkdown(
@@ -367,7 +429,7 @@ function renderNode(
   },
 ): string {
   if (node.type === TEXT_NODE) {
-    return decodeHtmlEntities((node as TextNode).value);
+    return (node as TextNode).value;
   }
 
   if (node.type !== ELEMENT_NODE) {
@@ -377,7 +439,18 @@ function renderNode(
   const element = node as ElementNode;
   const name = element.name.toLowerCase();
 
-  if (["script", "style", "button", "svg"].includes(name)) {
+  if (
+    [
+      "script",
+      "style",
+      "button",
+      "svg",
+      "iframe",
+      "object",
+      "embed",
+      "noscript",
+    ].includes(name)
+  ) {
     return "";
   }
 
@@ -486,7 +559,7 @@ function renderTable(
           child.type === ELEMENT_NODE &&
           ["td", "th"].includes(child.name.toLowerCase()),
       )
-      .map((cell) => renderInlineChildren(cell, options).replace(/\|/g, "\\|")),
+      .map((cell) => escapeTableCell(renderInlineChildren(cell, options))),
   );
 
   if (rows.length === 0) {
@@ -517,7 +590,7 @@ function collectElements(element: ElementNode, name: string): ElementNode[] {
 
 function getTextContent(node: Node): string {
   if (node.type === TEXT_NODE) {
-    return decodeHtmlEntities((node as TextNode).value);
+    return (node as TextNode).value;
   }
   if (!("children" in node)) {
     return "";
@@ -538,12 +611,6 @@ function normalizeMarkdown(markdown: string) {
     .trim();
 }
 
-function decodeHtmlEntities(value: string) {
-  return value
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+function escapeTableCell(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 }
