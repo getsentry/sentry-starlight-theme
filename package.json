@@ -88,5 +88,9 @@
     "*.{css,json,jsonc,md,mdx,yml,yaml}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "@fontsource-variable/rubik": "^5.2.8",
+    "@fontsource/ibm-plex-mono": "^5.2.7"
   }
 }

@@ -4,6 +4,12 @@ export { monochromeCodeTheme } from "./themes/monochrome";
 
 const packageName = "@sentry/starlight-theme";
 const themeCss = `${packageName}/styles/index.css`;
+const fontCss = [
+  "@fontsource-variable/rubik/wght.css",
+  "@fontsource/ibm-plex-mono/400.css",
+  "@fontsource/ibm-plex-mono/500.css",
+  "@fontsource/ibm-plex-mono/600.css",
+];
 const footerComponent = `${packageName}/components/Footer.astro`;
 const headerComponent = `${packageName}/components/Header.astro`;
 const mobileMenuFooterComponent = `${packageName}/components/MobileMenuFooter.astro`;
@@ -105,7 +111,11 @@ export function sentryStarlightTheme({
         }
 
         updateConfig({
-          customCss: dedupeCss([themeCss, ...(config.customCss ?? [])]),
+          customCss: dedupeCss([
+            ...fontCss,
+            themeCss,
+            ...(config.customCss ?? []),
+          ]),
           components,
           head: [
             ...(config.head ?? []),
@@ -118,29 +128,6 @@ export function sentryStarlightTheme({
             {
               tag: "style",
               content: "html{background:#0a0a0f}",
-            },
-            // Load Rubik (body) and IBM Plex Mono (code) from Google Fonts.
-            {
-              tag: "link",
-              attrs: {
-                rel: "preconnect",
-                href: "https://fonts.googleapis.com",
-              },
-            },
-            {
-              tag: "link",
-              attrs: {
-                rel: "preconnect",
-                href: "https://fonts.gstatic.com",
-                crossorigin: true,
-              },
-            },
-            {
-              tag: "link",
-              attrs: {
-                rel: "stylesheet",
-                href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Rubik:wght@400;500;600;700&display=swap",
-              },
             },
           ],
           expressiveCode:
