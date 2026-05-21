@@ -249,7 +249,7 @@ function rewriteInlineMarkdownLinksInText(
 }
 
 function isInsideInlineCode(markdown: string, offset: number) {
-  let index = markdown.lastIndexOf("\n", offset - 1) + 1;
+  let index = 0;
 
   while (index < offset) {
     const codeStart = markdown.indexOf("`", index);
@@ -265,7 +265,11 @@ function isInsideInlineCode(markdown: string, offset: number) {
       tickCount,
     );
 
-    if (codeEnd === -1 || codeEnd > offset) {
+    if (codeEnd === -1) {
+      return false;
+    }
+
+    if (codeEnd > offset) {
       return true;
     }
 
@@ -466,9 +470,24 @@ function getBacktickRunLength(value: string, start: number) {
 }
 
 function findInlineCodeEnd(value: string, start: number, tickCount: number) {
-  const ticks = "`".repeat(tickCount);
-  const end = value.indexOf(ticks, start);
-  return end === -1 ? -1 : end + tickCount;
+  let index = start;
+
+  while (index < value.length) {
+    const tickStart = value.indexOf("`", index);
+
+    if (tickStart === -1) {
+      return -1;
+    }
+
+    const length = getBacktickRunLength(value, tickStart);
+    if (length === tickCount) {
+      return tickStart + tickCount;
+    }
+
+    index = tickStart + length;
+  }
+
+  return -1;
 }
 
 function rewriteDocsUrl(
@@ -491,10 +510,6 @@ function rewriteDocsUrl(
   }
 
   try {
-    if (rawUrl.startsWith("/") && isIgnoredPath(rawUrl, siteBase)) {
-      return rawUrl;
-    }
-
     const normalizedRawUrl =
       siteBase !== "/" &&
       rawUrl.startsWith("/") &&
@@ -927,8 +942,9 @@ function renderListItem(
     renderChildren(item, options),
   );
   const [firstLine = "", ...remainingLines] = content.split("\n");
+  const continuationPrefix = " ".repeat(prefix.length);
   const continuation = remainingLines
-    .map((line) => (line ? `  ${line}` : ""))
+    .map((line) => (line ? `${continuationPrefix}${line}` : ""))
     .join("\n");
 
   return continuation
@@ -1057,11 +1073,12 @@ function normalizeMarkdown(markdown: string) {
     }
 
     if (character === "\n") {
-      pendingSpaces = "";
       newlineCount += 1;
       if (newlineCount <= 2) {
+        result += pendingSpaces;
         result += "\n";
       }
+      pendingSpaces = "";
       continue;
     }
 
