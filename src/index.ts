@@ -117,7 +117,7 @@ export function sentryStarlightTheme({
             },
             {
               tag: "style",
-              content: "html{background:#000}",
+              content: "html{background:#0a0a0f}",
             },
           ],
           expressiveCode:

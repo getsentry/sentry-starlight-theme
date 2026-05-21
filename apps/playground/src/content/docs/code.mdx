@@ -3,6 +3,8 @@ title: Code Fixtures
 description: Editor frames, terminal frames, diffs, and long-line behavior.
 ---
 
+import { TabItem, Tabs } from "@astrojs/starlight/components";
+
 Use this page for Expressive Code and markdown code block checks.
 
 Inline code should share the same calm code surface as larger examples:
@@ -36,6 +38,53 @@ pnpm run test
 pnpm release:check
 pnpm pack:dry
 ```
+
+## Package Manager Tabs
+
+<Tabs>
+  <TabItem label="pnpm">
+
+```sh
+pnpm add @sentry/starlight-theme
+```
+
+  </TabItem>
+  <TabItem label="npm">
+
+```sh
+npm install @sentry/starlight-theme
+```
+
+  </TabItem>
+  <TabItem label="Yarn">
+
+```sh
+yarn add @sentry/starlight-theme
+```
+
+  </TabItem>
+</Tabs>
+
+````mdx title="package-manager-tabs.mdx"
+import { TabItem, Tabs } from "@astrojs/starlight/components";
+
+<Tabs>
+  <TabItem label="pnpm">
+
+```sh
+pnpm add @sentry/starlight-theme
+```
+
+  </TabItem>
+  <TabItem label="npm">
+
+```sh
+npm install @sentry/starlight-theme
+```
+
+  </TabItem>
+</Tabs>
+````
 
 ## Diff
 
