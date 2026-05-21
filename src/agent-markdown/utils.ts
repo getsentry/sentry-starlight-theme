@@ -9,6 +9,7 @@ import {
   type TextNode,
 } from "ultrahtml";
 import {
+  formatInlineCodeSpan,
   getCodeFenceLength,
   getOpeningFence,
   isClosingFence,
@@ -679,7 +680,9 @@ function renderSourceFragment(
   }
 
   if (name === "code" && !insidePre) {
-    return `\`${getDecodedTextContent(element).replace(/\s+/g, " ").trim()}\``;
+    return formatInlineCodeSpan(
+      getDecodedTextContent(element).replace(/\s+/g, " ").trim(),
+    );
   }
 
   return renderSourceChildren(element, childOptions);
@@ -800,7 +803,9 @@ function renderNode(
   }
 
   if (name === "code") {
-    return `\`${getDecodedTextContent(element).replace(/\s+/g, " ").trim()}\``;
+    return formatInlineCodeSpan(
+      getDecodedTextContent(element).replace(/\s+/g, " ").trim(),
+    );
   }
 
   if (name === "pre") {

@@ -42,12 +42,14 @@ export function isClosingFence(line: string, fence: MarkdownFence) {
 }
 
 export function getCodeFenceLength(code: string) {
-  const runs = code.match(/`+/g) ?? [];
-  const longestRun = runs.reduce((longest, run) => {
-    return Math.max(longest, run.length);
-  }, 0);
+  return Math.max(3, getLongestBacktickRunLength(code) + 1);
+}
 
-  return Math.max(3, longestRun + 1);
+export function formatInlineCodeSpan(code: string) {
+  const delimiter = "`".repeat(getLongestBacktickRunLength(code) + 1);
+  const padding = code.startsWith("`") || code.endsWith("`") ? " " : "";
+
+  return `${delimiter}${padding}${code}${padding}${delimiter}`;
 }
 
 export function normalizeMarkdown(markdown: string) {
@@ -135,6 +137,11 @@ function countFenceCharacters(
   }
 
   return count;
+}
+
+function getLongestBacktickRunLength(value: string) {
+  const runs = value.match(/`+/g) ?? [];
+  return runs.reduce((longest, run) => Math.max(longest, run.length), 0);
 }
 
 function findAnchorTagStart(markdown: string, start: number) {

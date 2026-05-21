@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatInlineCodeSpan,
   getCodeFenceLength,
   getOpeningFence,
   isClosingFence,
@@ -17,6 +18,24 @@ describe("getCodeFenceLength", () => {
   it("exceeds the longest backtick run in code content", () => {
     expect(getCodeFenceLength("```\nconst value = true;\n```")).toBe(4);
     expect(getCodeFenceLength("````md\n```js\n```\n````")).toBe(5);
+  });
+});
+
+describe("formatInlineCodeSpan", () => {
+  it("uses a single-backtick delimiter for plain inline code", () => {
+    expect(formatInlineCodeSpan("const value = true;")).toBe(
+      "`const value = true;`",
+    );
+  });
+
+  it("exceeds the longest backtick run in inline code content", () => {
+    expect(formatInlineCodeSpan("foo `bar` baz")).toBe("``foo `bar` baz``");
+    expect(formatInlineCodeSpan("foo `` bar")).toBe("```foo `` bar```");
+  });
+
+  it("pads code content that starts or ends with a backtick", () => {
+    expect(formatInlineCodeSpan("`hello`")).toBe("`` `hello` ``");
+    expect(formatInlineCodeSpan("foo `bar`")).toBe("`` foo `bar` ``");
   });
 });
 
