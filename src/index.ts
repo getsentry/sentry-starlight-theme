@@ -6,9 +6,12 @@ const packageName = "@sentry/starlight-theme";
 const themeCss = `${packageName}/styles/index.css`;
 const fontCss = [
   "@fontsource-variable/rubik/wght.css",
+  "@fontsource-variable/rubik/wght-italic.css",
   "@fontsource/ibm-plex-mono/400.css",
+  "@fontsource/ibm-plex-mono/400-italic.css",
   "@fontsource/ibm-plex-mono/500.css",
   "@fontsource/ibm-plex-mono/600.css",
+  "@fontsource/ibm-plex-mono/700.css",
 ];
 const footerComponent = `${packageName}/components/Footer.astro`;
 const headerComponent = `${packageName}/components/Header.astro`;
