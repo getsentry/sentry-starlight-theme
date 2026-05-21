@@ -1,4 +1,8 @@
 import { monochromeCodeTheme } from "./themes/monochrome";
+import {
+  setStarlightComponentOverride,
+  type StarlightComponentOverrides,
+} from "./starlight-components";
 
 export {
   sentryAgentMarkdown,
@@ -14,7 +18,6 @@ const mobileMenuFooterComponent = `${packageName}/components/MobileMenuFooter.as
 const paginationComponent = `${packageName}/components/Pagination.astro`;
 const themeSelectComponent = `${packageName}/components/ThemeSelect.astro`;
 
-type ComponentOverrides = NonNullable<StarlightUserConfig["components"]>;
 type ExpressiveCodeConfig = Exclude<
   StarlightUserConfig["expressiveCode"],
   boolean | undefined
@@ -68,44 +71,47 @@ export function sentryStarlightTheme({
     name: packageName,
     hooks: {
       "config:setup"({ config, updateConfig, logger }) {
-        const components: ComponentOverrides = { ...(config.components ?? {}) };
+        const components: StarlightComponentOverrides = {
+          ...(config.components ?? {}),
+        };
 
-        setThemeComponent({
+        setStarlightComponentOverride({
           components,
           component: "Header",
           componentPath: headerComponent,
           logger,
+          usage: `${packageName}'s Header design`,
         });
-        setThemeComponent({
+        setStarlightComponentOverride({
           components,
           component: "Footer",
           componentPath: footerComponent,
           logger,
+          usage: `${packageName}'s Footer design`,
         });
-        setThemeComponent({
+        setStarlightComponentOverride({
           components,
           component: "MobileMenuFooter",
           componentPath: mobileMenuFooterComponent,
           logger,
+          usage: `${packageName}'s MobileMenuFooter design`,
         });
-        setThemeComponent({
+        setStarlightComponentOverride({
           components,
           component: "Pagination",
           componentPath: paginationComponent,
           logger,
+          usage: `${packageName}'s Pagination design`,
         });
 
         if (hideThemeSelect) {
-          if (components.ThemeSelect) {
-            logger.warn(
-              "A `<ThemeSelect>` component override is already defined in your Starlight configuration.",
-            );
-            logger.warn(
-              `To use ${packageName}'s single-theme behavior, remove that override or render ${themeSelectComponent}.`,
-            );
-          } else {
-            components.ThemeSelect = themeSelectComponent;
-          }
+          setStarlightComponentOverride({
+            components,
+            component: "ThemeSelect",
+            componentPath: themeSelectComponent,
+            logger,
+            usage: `use ${packageName}'s single-theme behavior`,
+          });
         }
 
         updateConfig({
@@ -207,30 +213,4 @@ function buildExpressiveCodeConfig(
 
 function dedupeCss(css: NonNullable<StarlightUserConfig["customCss"]>) {
   return css.filter((item, index) => css.indexOf(item) === index);
-}
-
-function setThemeComponent({
-  components,
-  component,
-  componentPath,
-  logger,
-}: {
-  components: ComponentOverrides;
-  component: string;
-  componentPath: string;
-  logger: {
-    warn(message: string): void;
-  };
-}) {
-  if (components[component]) {
-    logger.warn(
-      `A \`<${component}>\` component override is already defined in your Starlight configuration.`,
-    );
-    logger.warn(
-      `To use ${packageName}'s ${component} design, remove that override or render ${componentPath}.`,
-    );
-    return;
-  }
-
-  components[component] = componentPath;
 }

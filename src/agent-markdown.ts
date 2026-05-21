@@ -1,10 +1,12 @@
 import type { AstroIntegration } from "astro";
+import {
+  setStarlightComponentOverride,
+  type StarlightComponentOverrides,
+} from "./starlight-components";
 
 const packageName = "@sentry/starlight-theme";
 const pluginName = `${packageName}/agent-markdown`;
 const tableOfContentsComponent = `${packageName}/agent-markdown/TableOfContents`;
-
-type ComponentOverrides = NonNullable<StarlightUserConfig["components"]>;
 
 interface StarlightUserConfig {
   components?: Record<string, string | undefined>;
@@ -61,17 +63,20 @@ export function sentryAgentMarkdown({
           );
         }
 
-        const components: ComponentOverrides = { ...(config.components ?? {}) };
+        const components: StarlightComponentOverrides = {
+          ...(config.components ?? {}),
+        };
         if (markdownActions && !markdownRoutes) {
           logger.warn(
             `${pluginName}'s markdownActions option requires markdownRoutes. No Markdown actions will be added.`,
           );
         } else if (markdownActions) {
-          setComponent({
+          setStarlightComponentOverride({
             components,
             component: "TableOfContents",
             componentPath: tableOfContentsComponent,
             logger,
+            usage: `show ${pluginName}'s Markdown actions`,
           });
         }
 
@@ -83,32 +88,6 @@ export function sentryAgentMarkdown({
       },
     },
   };
-}
-
-function setComponent({
-  components,
-  component,
-  componentPath,
-  logger,
-}: {
-  components: ComponentOverrides;
-  component: string;
-  componentPath: string;
-  logger: {
-    warn(message: string): void;
-  };
-}) {
-  if (components[component]) {
-    logger.warn(
-      `A \`<${component}>\` component override is already defined in your Starlight configuration.`,
-    );
-    logger.warn(
-      `To show ${pluginName}'s Markdown actions, remove that override or render ${componentPath}.`,
-    );
-    return;
-  }
-
-  components[component] = componentPath;
 }
 
 function agentMarkdownIntegration({

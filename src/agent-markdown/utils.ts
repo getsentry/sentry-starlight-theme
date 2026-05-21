@@ -288,36 +288,164 @@ function rewriteHtmlHrefAttributes(
   let index = 0;
 
   while (index < markdown.length) {
-    const hrefStart = markdown.indexOf("href=", index);
+    const tagStart = findAnchorTagStart(markdown, index);
 
-    if (hrefStart === -1) {
+    if (tagStart === -1) {
       result += markdown.slice(index);
       break;
     }
 
-    const quote = markdown[hrefStart + 5];
-    if (quote !== '"' && quote !== "'") {
-      result += markdown.slice(index, hrefStart + 5);
-      index = hrefStart + 5;
-      continue;
-    }
-
-    const urlStart = hrefStart + 6;
-    const urlEnd = markdown.indexOf(quote, urlStart);
-
-    if (urlEnd === -1) {
+    const tagEnd = findHtmlTagEnd(markdown, tagStart + 2);
+    if (tagEnd === -1) {
       result += markdown.slice(index);
       break;
     }
 
-    const url = markdown.slice(urlStart, urlEnd);
-    const rewritten = rewriteDocsUrl(url, context, currentPageId);
-    result += markdown.slice(index, urlStart);
-    result += rewritten;
-    index = urlEnd;
+    result += markdown.slice(index, tagStart);
+    result += rewriteAnchorTagHref(
+      markdown.slice(tagStart, tagEnd + 1),
+      context,
+      currentPageId,
+    );
+    index = tagEnd + 1;
   }
 
   return result;
+}
+
+function findAnchorTagStart(markdown: string, start: number) {
+  let index = start;
+
+  while (index < markdown.length) {
+    const tagStart = markdown.indexOf("<", index);
+    if (tagStart === -1) {
+      return -1;
+    }
+
+    if (markdown[tagStart + 1]?.toLowerCase() !== "a") {
+      index = tagStart + 1;
+      continue;
+    }
+
+    const nextCharacter = markdown[tagStart + 2];
+    if (
+      nextCharacter === ">" ||
+      nextCharacter === "/" ||
+      nextCharacter === " " ||
+      nextCharacter === "\t" ||
+      nextCharacter === "\n" ||
+      nextCharacter === "\r"
+    ) {
+      return tagStart;
+    }
+
+    index = tagStart + 2;
+  }
+
+  return -1;
+}
+
+function findHtmlTagEnd(markdown: string, start: number) {
+  let quote: string | undefined;
+
+  for (let index = start; index < markdown.length; index += 1) {
+    const character = markdown[index];
+
+    if (quote) {
+      if (character === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+
+    if (character === ">") {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function rewriteAnchorTagHref(
+  tag: string,
+  context: Pick<APIContext, "site" | "url">,
+  currentPageId: string,
+) {
+  let index = 2;
+
+  while (index < tag.length - 1) {
+    while (isHtmlWhitespace(tag[index])) {
+      index += 1;
+    }
+
+    const nameStart = index;
+    while (index < tag.length - 1 && isHtmlAttributeNameCharacter(tag[index])) {
+      index += 1;
+    }
+
+    if (nameStart === index) {
+      index += 1;
+      continue;
+    }
+
+    const name = tag.slice(nameStart, index).toLowerCase();
+    while (isHtmlWhitespace(tag[index])) {
+      index += 1;
+    }
+
+    if (tag[index] !== "=") {
+      continue;
+    }
+
+    index += 1;
+    while (isHtmlWhitespace(tag[index])) {
+      index += 1;
+    }
+
+    const quote = tag[index];
+    if (quote !== '"' && quote !== "'") {
+      continue;
+    }
+
+    const urlStart = index + 1;
+    const urlEnd = tag.indexOf(quote, urlStart);
+    if (urlEnd === -1) {
+      return tag;
+    }
+
+    if (name === "href") {
+      const url = tag.slice(urlStart, urlEnd);
+      const rewritten = rewriteDocsUrl(url, context, currentPageId);
+      return `${tag.slice(0, urlStart)}${rewritten}${tag.slice(urlEnd)}`;
+    }
+
+    index = urlEnd + 1;
+  }
+
+  return tag;
+}
+
+function isHtmlWhitespace(character: string | undefined) {
+  return (
+    character === " " ||
+    character === "\t" ||
+    character === "\n" ||
+    character === "\r" ||
+    character === "\f"
+  );
+}
+
+function isHtmlAttributeNameCharacter(character: string | undefined) {
+  return Boolean(
+    character &&
+    !isHtmlWhitespace(character) &&
+    !["/", ">", "="].includes(character),
+  );
 }
 
 function applyOutsideInlineCode(
