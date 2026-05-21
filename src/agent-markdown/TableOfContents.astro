@@ -26,47 +26,59 @@ const markdownPath = toMarkdownPath(Astro.url.pathname, siteBase);
 </div>
 
 <script>
-  const buttons = document.querySelectorAll<HTMLButtonElement>(
-    "[data-sentry-copy-markdown]",
-  );
+  const boundCopyMarkdownButtons = new WeakSet<HTMLButtonElement>();
 
-  for (const button of buttons) {
-    button.addEventListener("click", async () => {
-      const markdownUrl = button.dataset.markdownUrl;
-      const container = button.closest(".sentry-markdown-actions");
-      const label = button.querySelector<HTMLElement>(
-        "[data-sentry-copy-markdown-label]",
-      );
-      const status = container?.querySelector<HTMLElement>(
-        "[data-sentry-copy-markdown-status]",
-      );
-      if (!markdownUrl) {
-        return;
+  function bindCopyMarkdownButtons() {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      "[data-sentry-copy-markdown]",
+    );
+
+    for (const button of buttons) {
+      if (boundCopyMarkdownButtons.has(button)) {
+        continue;
       }
 
-      const originalText = label?.textContent ?? "Markdown";
-      button.disabled = true;
-      if (status) status.textContent = "";
-
-      try {
-        const response = await fetch(markdownUrl);
-        if (!response.ok) {
-          throw new Error(`Markdown request failed with ${response.status}`);
+      boundCopyMarkdownButtons.add(button);
+      button.addEventListener("click", async () => {
+        const markdownUrl = button.dataset.markdownUrl;
+        const container = button.closest(".sentry-markdown-actions");
+        const label = button.querySelector<HTMLElement>(
+          "[data-sentry-copy-markdown-label]",
+        );
+        const status = container?.querySelector<HTMLElement>(
+          "[data-sentry-copy-markdown-status]",
+        );
+        if (!markdownUrl) {
+          return;
         }
 
-        await navigator.clipboard.writeText(await response.text());
-        if (label) label.textContent = "Copied";
-        if (status) status.textContent = "Copied";
-      } catch {
-        if (label) label.textContent = "Failed";
-        if (status) status.textContent = "Copy failed";
-      } finally {
-        window.setTimeout(() => {
-          button.disabled = false;
-          if (label) label.textContent = originalText;
-          if (status) status.textContent = "";
-        }, 1800);
-      }
-    });
+        const originalText = label?.textContent ?? "Markdown";
+        button.disabled = true;
+        if (status) status.textContent = "";
+
+        try {
+          const response = await fetch(markdownUrl);
+          if (!response.ok) {
+            throw new Error(`Markdown request failed with ${response.status}`);
+          }
+
+          await navigator.clipboard.writeText(await response.text());
+          if (label) label.textContent = "Copied";
+          if (status) status.textContent = "Copied";
+        } catch {
+          if (label) label.textContent = "Failed";
+          if (status) status.textContent = "Copy failed";
+        } finally {
+          window.setTimeout(() => {
+            button.disabled = false;
+            if (label) label.textContent = originalText;
+            if (status) status.textContent = "";
+          }, 1800);
+        }
+      });
+    }
   }
+
+  document.addEventListener("astro:page-load", bindCopyMarkdownButtons);
+  bindCopyMarkdownButtons();
 </script>
