@@ -14,6 +14,7 @@ pnpm add @sentry/starlight-theme @astrojs/starlight astro
 import starlight from "@astrojs/starlight";
 import sentryStarlightTheme, {
   monochromeCodeTheme,
+  sentryAgentMarkdown,
 } from "@sentry/starlight-theme";
 import { defineConfig } from "astro/config";
 
@@ -21,7 +22,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "My Sentry project",
-      plugins: [sentryStarlightTheme()],
+      plugins: [sentryStarlightTheme(), sentryAgentMarkdown()],
     }),
   ],
   markdown: {
@@ -33,6 +34,35 @@ export default defineConfig({
 ```
 
 The plugin installs the shared CSS, applies the monochrome Expressive Code theme, and overrides Starlight's `ThemeSelect` with an empty component because this theme is intentionally dark-only. Project-level `customCss` is kept after the package CSS so consuming docs sites can make small local adjustments.
+
+## Markdown for AI agents
+
+`sentryAgentMarkdown()` generates static `.md` versions of Starlight docs pages for LLM and coding-agent clients:
+
+- `/index.md` for the root docs page.
+- `/<slug>.md` for every other docs page.
+
+Markdown responses include YAML metadata (`title`, `description`, and `url`), use `text/markdown; charset=utf-8`, and rewrite internal docs links to `.md` URLs when possible. The exporter uses rendered HTML when Astro makes it available and otherwise falls back to normalized source Markdown/MDX, stripping common JSX wrappers and import/export statements.
+
+The plugin also adds a copy-to-clipboard Markdown action below Starlight's right-sidebar table of contents. Disable this if a site has its own table-of-contents override:
+
+```js
+sentryAgentMarkdown({
+  markdownActions: false,
+});
+```
+
+By default, the plugin only emits static Markdown routes. SSR/on-demand deployments can also enable `Accept: text/markdown` handling:
+
+```js
+sentryAgentMarkdown({
+  contentNegotiation: true,
+});
+```
+
+Static deployments cannot vary an already-built HTML page by request headers without platform-level rewrites, so keep content negotiation disabled unless the site runs Astro middleware at request time.
+
+This is intentionally lighter weight than Sentry's main docs pipeline, which converts built HTML after the site build. Highly custom MDX components may need site-specific Markdown authoring or a post-build exporter for perfect output.
 
 ## Develop
 

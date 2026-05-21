@@ -8,6 +8,11 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./agent-markdown": "./src/agent-markdown.ts",
+    "./agent-markdown/TableOfContents": "./src/agent-markdown/TableOfContents.astro",
+    "./agent-markdown/index-endpoint": "./src/agent-markdown/index-endpoint.ts",
+    "./agent-markdown/slug-endpoint": "./src/agent-markdown/slug-endpoint.ts",
+    "./agent-markdown/middleware": "./src/agent-markdown/middleware.ts",
     "./components/*.astro": "./src/components/*.astro",
     "./styles/index.css": "./src/styles/index.css",
     "./themes/monochrome": "./src/themes/monochrome.ts",
@@ -91,6 +96,7 @@
   },
   "dependencies": {
     "@fontsource-variable/rubik": "^5.2.8",
-    "@fontsource/ibm-plex-mono": "^5.2.7"
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "ultrahtml": "^1.6.0"
   }
 }

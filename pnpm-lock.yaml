@@ -14,6 +14,9 @@ importers:
       '@fontsource/ibm-plex-mono':
         specifier: ^5.2.7
         version: 5.2.7
+      ultrahtml:
+        specifier: ^1.6.0
+        version: 1.6.0
     devDependencies:
       '@astrojs/check':
         specifier: ^0.9.9

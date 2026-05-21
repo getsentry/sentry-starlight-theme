@@ -1,5 +1,9 @@
 import { monochromeCodeTheme } from "./themes/monochrome";
 
+export {
+  sentryAgentMarkdown,
+  type SentryAgentMarkdownOptions,
+} from "./agent-markdown";
 export { monochromeCodeTheme } from "./themes/monochrome";
 
 const packageName = "@sentry/starlight-theme";
