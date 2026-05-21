@@ -188,4 +188,19 @@ describe("rewriteAnchorHrefAttributes", () => {
       ),
     ).toBe('<a download href="/docs/intro/">Intro</a>');
   });
+
+  it("rewrites unquoted href attributes", () => {
+    expect(
+      rewriteAnchorHrefAttributes("<a href=/intro/>Intro</a>", rewriteUrl),
+    ).toBe("<a href=/docs/intro/>Intro</a>");
+  });
+
+  it("keeps scanning after unquoted non-href attributes", () => {
+    expect(
+      rewriteAnchorHrefAttributes(
+        "<a data-label=intro href=/intro/ target=_blank>Intro</a>",
+        rewriteUrl,
+      ),
+    ).toBe("<a data-label=intro href=/docs/intro/ target=_blank>Intro</a>");
+  });
 });

@@ -472,6 +472,23 @@ function rewriteAnchorTagHref(
 
     const quote = tag[index];
     if (quote !== '"' && quote !== "'") {
+      const urlStart = index;
+      while (
+        index < tag.length - 1 &&
+        !isHtmlUnquotedAttributeEnd(tag[index])
+      ) {
+        index += 1;
+      }
+
+      if (urlStart === index) {
+        continue;
+      }
+
+      if (name === "href") {
+        const url = tag.slice(urlStart, index);
+        return `${tag.slice(0, urlStart)}${rewriteUrl(url)}${tag.slice(index)}`;
+      }
+
       continue;
     }
 
@@ -500,6 +517,10 @@ function isHtmlWhitespace(character: string | undefined) {
     character === "\r" ||
     character === "\f"
   );
+}
+
+function isHtmlUnquotedAttributeEnd(character: string | undefined) {
+  return isHtmlWhitespace(character) || character === ">";
 }
 
 function isHtmlAttributeNameCharacter(character: string | undefined) {
