@@ -101,6 +101,14 @@ describe("inline code scanning", () => {
     ).toBe("Use \\`literal\\` ticks");
   });
 
+  it("keeps scanning after unmatched inline code delimiters", () => {
+    expect(
+      applyOutsideInlineCode("`open ``literal`` change", (segment) =>
+        segment.replace("change", "update"),
+      ),
+    ).toBe("`open ``literal`` update");
+  });
+
   it("detects offsets inside real code spans only", () => {
     expect(isInsideInlineCode("Use `literal` value", 6)).toBe(true);
     expect(isInsideInlineCode("Use \\`literal\\` value", 6)).toBe(false);
@@ -193,6 +201,15 @@ describe("rewriteAnchorHrefAttributes", () => {
     expect(
       rewriteAnchorHrefAttributes("<a href=/intro/>Intro</a>", rewriteUrl),
     ).toBe("<a href=/docs/intro/>Intro</a>");
+  });
+
+  it("keeps scanning after malformed anchor tags", () => {
+    expect(
+      rewriteAnchorHrefAttributes(
+        'Broken <a href="/broken"\n<a href="/intro/">Intro</a>',
+        rewriteUrl,
+      ),
+    ).toBe('Broken <a href="/broken"\n<a href="/docs/intro/">Intro</a>');
   });
 
   it("keeps scanning after unquoted non-href attributes", () => {

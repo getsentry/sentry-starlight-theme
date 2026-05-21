@@ -103,7 +103,8 @@ export function getInlineCodeSpans(markdown: string): MarkdownInlineCodeSpan[] {
     );
 
     if (codeEnd === -1) {
-      break;
+      index = codeStart + tickCount;
+      continue;
     }
 
     spans.push({ end: codeEnd, start: codeStart });
@@ -203,8 +204,15 @@ export function rewriteAnchorHrefAttributes(
 
     const tagEnd = findHtmlTagEnd(markdown, tagStart + 2);
     if (tagEnd === -1) {
-      result += markdown.slice(index);
-      break;
+      result += markdown.slice(index, tagStart + 1);
+      index = tagStart + 1;
+      continue;
+    }
+
+    if (findNestedAnchorTagStart(markdown, tagStart + 2, tagEnd) !== -1) {
+      result += markdown.slice(index, tagStart + 1);
+      index = tagStart + 1;
+      continue;
     }
 
     result += markdown.slice(index, tagStart);
@@ -416,6 +424,42 @@ function findHtmlTagEnd(markdown: string, start: number) {
     }
 
     if (character === ">") {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function findNestedAnchorTagStart(
+  markdown: string,
+  start: number,
+  end: number,
+) {
+  let quote: string | undefined;
+
+  for (let index = start; index < end; index += 1) {
+    const character = markdown[index];
+
+    if (quote) {
+      if (character === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+
+    if (
+      character === "<" &&
+      markdown[index + 1]?.toLowerCase() === "a" &&
+      (markdown[index + 2] === ">" ||
+        markdown[index + 2] === "/" ||
+        isHtmlWhitespace(markdown[index + 2]))
+    ) {
       return index;
     }
   }

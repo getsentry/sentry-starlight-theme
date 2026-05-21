@@ -63,6 +63,9 @@ describe("renderMarkdownResponse", () => {
           },
           body: [
             "`[Literal](/docs/code/)`",
+            "Broken ```open ``[Literal double](/docs/code/)``",
+            '[Broken](/docs/missing "unterminated',
+            "[After broken](/docs/content/)",
             '[Titled](/docs/content/ "Read more")',
             '   [Code ref]: /docs/code/ "Code reference"',
             '<img src="/docs/assets/example.png" alt="Example image">',
@@ -77,6 +80,9 @@ describe("renderMarkdownResponse", () => {
     await expect(response.text()).resolves.toContain(
       [
         "`[Literal](/docs/code/)`",
+        "Broken ```open ``[Literal double](/docs/code/)``",
+        '[Broken](/docs/missing "unterminated',
+        "[After broken](/docs/content.md)",
         '[Titled](/docs/content.md "Read more")',
         '   [Code ref]: /docs/code.md "Code reference"',
         "![Example image](/docs/assets/example.png)",

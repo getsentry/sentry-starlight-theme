@@ -264,8 +264,9 @@ function rewriteInlineMarkdownLinksInText(
     const linkEnd =
       urlEnd === -1 ? -1 : findInlineMarkdownLinkEnd(markdown, urlEnd);
     if (urlEnd === -1 || linkEnd === -1) {
-      result += markdown.slice(index);
-      break;
+      result += markdown.slice(index, linkStart + 2);
+      index = linkStart + 2;
+      continue;
     }
 
     const url = markdown.slice(urlStart, urlEnd);
