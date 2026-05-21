@@ -792,7 +792,16 @@ function getOpeningFence(line: string): MarkdownFence | undefined {
   }
 
   const length = countFenceCharacters(line, leadingSpaces, character);
-  return length >= 3 ? { character, length } : undefined;
+  if (length < 3) {
+    return undefined;
+  }
+
+  const infoString = line.slice(leadingSpaces + length).trim();
+  if (character === "`" && infoString.includes("`")) {
+    return undefined;
+  }
+
+  return { character, length };
 }
 
 function isClosingFence(line: string, fence: MarkdownFence) {
