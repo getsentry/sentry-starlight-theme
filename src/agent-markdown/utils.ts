@@ -23,7 +23,23 @@ export interface MarkdownPage extends Record<string, unknown> {
   id: string;
 }
 
+let markdownPagesPromise: Promise<MarkdownPage[]> | undefined;
+
 export async function getMarkdownPages(): Promise<MarkdownPage[]> {
+  if (import.meta.env.MODE === "production" && markdownPagesPromise) {
+    return markdownPagesPromise;
+  }
+
+  const pagesPromise = loadMarkdownPages();
+
+  if (import.meta.env.MODE === "production") {
+    markdownPagesPromise = pagesPromise;
+  }
+
+  return pagesPromise;
+}
+
+async function loadMarkdownPages(): Promise<MarkdownPage[]> {
   const entries = (await getCollection("docs", ({ data }: DocsEntry) => {
     return import.meta.env.MODE !== "production" || data.draft !== true;
   })) as DocsEntry[];
@@ -465,7 +481,7 @@ function renderNode(
     return `\n${items
       .map((item, index) => {
         const prefix = ordered ? `${index + 1}. ` : "- ";
-        return `${prefix}${renderInlineChildren(item, options)}`;
+        return renderListItem(item, prefix, options);
       })
       .join("\n")}\n\n`;
   }
@@ -492,6 +508,25 @@ function renderNode(
   }
 
   return renderChildren(element, options);
+}
+
+function renderListItem(
+  item: ElementNode,
+  prefix: string,
+  options: {
+    context: Pick<APIContext, "site" | "url">;
+    currentPageId: string;
+  },
+) {
+  const content = normalizeMarkdown(renderChildren(item, options));
+  const [firstLine = "", ...remainingLines] = content.split("\n");
+  const continuation = remainingLines
+    .map((line) => (line ? `  ${line}` : ""))
+    .join("\n");
+
+  return continuation
+    ? `${prefix}${firstLine}\n${continuation}`
+    : `${prefix}${firstLine}`;
 }
 
 function renderTable(

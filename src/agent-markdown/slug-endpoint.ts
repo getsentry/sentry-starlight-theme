@@ -2,6 +2,7 @@ import type { APIContext } from "astro";
 import {
   getMarkdownPageById,
   getMarkdownStaticPaths,
+  type MarkdownPage,
   renderMarkdownResponse,
 } from "./utils";
 
@@ -13,11 +14,23 @@ export async function getStaticPaths() {
 
 export async function GET(context: APIContext) {
   const slug = context.params.slug;
-  const page = slug ? await getMarkdownPageById(slug) : undefined;
+  const page =
+    getMarkdownPageFromProps(context) ??
+    (slug ? await getMarkdownPageById(slug) : undefined);
 
   if (!page) {
     return new Response(null, { status: 404 });
   }
 
   return renderMarkdownResponse(context, page);
+}
+
+function getMarkdownPageFromProps(
+  context: APIContext,
+): MarkdownPage | undefined {
+  const page = context.props as Partial<MarkdownPage> | undefined;
+
+  return page?.entry && typeof page.id === "string"
+    ? (page as MarkdownPage)
+    : undefined;
 }
