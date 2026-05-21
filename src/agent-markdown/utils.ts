@@ -228,6 +228,13 @@ function rewriteInlineMarkdownLinks(
       break;
     }
 
+    const labelStart = findMarkdownLinkLabelStart(markdown, linkStart);
+    if (labelStart === -1 || labelStart < index) {
+      result += markdown.slice(index, linkStart + 2);
+      index = linkStart + 2;
+      continue;
+    }
+
     const urlStart = linkStart + 2;
     const urlEnd = findMarkdownUrlEnd(markdown, urlStart, ")");
     if (urlEnd === -1) {
@@ -242,6 +249,37 @@ function rewriteInlineMarkdownLinks(
   }
 
   return result;
+}
+
+function findMarkdownLinkLabelStart(value: string, labelEnd: number) {
+  let bracketDepth = 0;
+
+  for (let index = labelEnd - 1; index >= 0; index -= 1) {
+    const character = value[index];
+
+    if (character === "\n") {
+      return -1;
+    }
+
+    if (isEscaped(value, index)) {
+      continue;
+    }
+
+    if (character === "]") {
+      bracketDepth += 1;
+      continue;
+    }
+
+    if (character === "[") {
+      if (bracketDepth === 0) {
+        return index;
+      }
+
+      bracketDepth -= 1;
+    }
+  }
+
+  return -1;
 }
 
 function rewriteMarkdownReferenceLinks(
@@ -305,6 +343,20 @@ function findMarkdownUrlEnd(value: string, start: number, terminator?: string) {
   return terminator ? -1 : value.length;
 }
 
+function isEscaped(value: string, index: number) {
+  let slashCount = 0;
+
+  for (
+    let offset = index - 1;
+    offset >= 0 && value[offset] === "\\";
+    offset -= 1
+  ) {
+    slashCount += 1;
+  }
+
+  return slashCount % 2 === 1;
+}
+
 function getBacktickRunLength(value: string, start: number) {
   let length = 0;
   while (value[start + length] === "`") {
@@ -339,7 +391,7 @@ function rewriteDocsUrl(
   }
 
   try {
-    if (rawUrl.startsWith("/") && isIgnoredPath(rawUrl, "/")) {
+    if (rawUrl.startsWith("/") && isIgnoredPath(rawUrl, siteBase)) {
       return rawUrl;
     }
 
@@ -398,7 +450,7 @@ function dedupeMarkdownPages(pages: MarkdownPage[]) {
 
   for (const page of pages) {
     const existing = pageById.get(page.id);
-    if (!existing || isIndexEntryId(existing.entry.id)) {
+    if (!existing || isIndexEntryId(page.entry.id)) {
       pageById.set(page.id, page);
     }
   }

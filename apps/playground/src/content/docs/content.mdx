@@ -13,6 +13,8 @@ Inline code should hold up inside dense text: `pnpm --filter @sentry/starlight-t
 
 A link with parentheses should survive Markdown export, like [Rust](<https://en.wikipedia.org/wiki/Rust_(programming_language)>). Link-like inline code should stay literal: `[do not rewrite](/content/)`.
 
+Plain text that only looks like part of a link should stay literal: compare a](i) and b](i).
+
 ```html
 <div data-state="open">Example</div>
 
