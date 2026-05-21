@@ -5,22 +5,25 @@
 [data-theme="dark"] ::backdrop,
 [data-theme="light"] ::backdrop {
   color-scheme: dark;
-  background: #000;
+  background: #0a0a0f;
 
-  --ve-bg: #000;
-  --ve-bg-soft: #050505;
-  --ve-code-bg: #111;
+  --ve-bg: #0a0a0f;
+  --ve-bg-soft: #0d0d14;
+  --ve-code-bg: #141419;
   --ve-code-control-hover: rgba(255, 255, 255, 0.17);
-  --ve-surface: #0b0b0b;
-  --ve-surface-raised: #111;
-  --ve-surface-hover: #151515;
+  --ve-surface: #101017;
+  --ve-surface-raised: #141419;
+  --ve-surface-hover: #1a1a22;
   --ve-text: #fafafa;
   --ve-text-secondary: #b8b8b8;
   --ve-text-tertiary: #888;
+  --ve-accent: #8b5cf6;
+  --ve-accent-soft: rgba(139, 92, 246, 0.2);
+  --ve-accent-line: rgba(139, 92, 246, 0.42);
   --ve-line-soft: rgba(255, 255, 255, 0.08);
   --ve-line: rgba(255, 255, 255, 0.14);
   --ve-line-strong: rgba(255, 255, 255, 0.28);
-  --ve-heading-accent: rgba(190, 170, 255, 0.26);
+  --ve-heading-accent: rgba(139, 92, 246, 0.22);
 
   --sl-color-white: var(--ve-text);
   --sl-color-gray-1: #ededed;
@@ -28,7 +31,7 @@
   --sl-color-gray-3: var(--ve-text-tertiary);
   --sl-color-gray-4: #666;
   --sl-color-gray-5: #343434;
-  --sl-color-gray-6: #181818;
+  --sl-color-gray-6: #1a1a22;
   --sl-color-gray-7: var(--ve-surface);
   --sl-color-black: var(--ve-bg);
 
@@ -297,7 +300,7 @@ main > .content-panel:first-child h1 {
 .sidebar [aria-current="page"],
 .sidebar [aria-current="page"]:hover,
 .sidebar [aria-current="page"]:focus {
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--ve-accent-soft);
   color: var(--ve-text);
   font-weight: 650;
 }
@@ -587,6 +590,59 @@ starlight-menu-button[aria-expanded="true"] button {
   background: transparent;
   color: inherit;
   padding: 0;
+}
+
+starlight-tabs:not(:where(.not-content *)) {
+  display: block;
+  margin: 1rem 0;
+}
+
+starlight-tabs:not(:where(.not-content *)) .tablist-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+starlight-tabs:not(:where(.not-content *)) [role="tablist"] {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  gap: 0.15rem;
+  border-bottom: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 0.18rem;
+}
+
+starlight-tabs:not(:where(.not-content *)) .tab > [role="tab"] {
+  border-radius: 6px;
+  box-shadow: none;
+  color: var(--ve-text-tertiary);
+  font-size: 0.82rem;
+  line-height: 1.25;
+  padding: 0.34rem 0.72rem;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+starlight-tabs:not(:where(.not-content *)) .tab > [role="tab"]:hover,
+starlight-tabs:not(:where(.not-content *)) .tab > [role="tab"]:focus {
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--ve-text-secondary);
+}
+
+starlight-tabs:not(:where(.not-content *))
+  .tab
+  > [role="tab"][aria-selected="true"] {
+  background: var(--ve-accent-soft);
+  color: var(--ve-text);
+  font-weight: 650;
+}
+
+starlight-tabs:not(:where(.not-content *))
+  .tablist-wrapper
+  ~ [role="tabpanel"] {
+  margin-top: 0.65rem;
 }
 
 .sl-markdown-content .expressive-code {
