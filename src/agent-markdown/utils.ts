@@ -723,10 +723,20 @@ function cleanSourceMarkdown(markdown: string) {
       .replace(/^export\s.+$/gm, "")
       .replace(/\{"\s+"\}/g, " ");
 
-    return applyOutsideInlineCode(normalized, (htmlSegment) =>
-      renderSourceFragment(parse(htmlSegment) as Node),
-    );
+    return applyOutsideInlineCode(normalized, renderSourceHtmlSegment);
   });
+}
+
+function renderSourceHtmlSegment(segment: string) {
+  if (!segment.includes("<")) {
+    return segment;
+  }
+
+  try {
+    return renderSourceFragment(parse(segment) as Node);
+  } catch {
+    return segment;
+  }
 }
 
 function applyOutsideFencedCode(
