@@ -9,11 +9,13 @@ import {
   type TextNode,
 } from "ultrahtml";
 import {
+  applyOutsideInlineCode,
   decodeHtmlEntities,
   formatInlineCodeSpan,
   getCodeFenceLength,
   getOpeningFence,
   hasMarkdownHtmlTag,
+  isInsideInlineCode,
   isClosingFence,
   normalizeMarkdown,
   normalizeMarkdownHeadingText,
@@ -260,37 +262,6 @@ function rewriteInlineMarkdownLinksInText(
   return result;
 }
 
-function isInsideInlineCode(markdown: string, offset: number) {
-  let index = 0;
-
-  while (index < offset) {
-    const codeStart = markdown.indexOf("`", index);
-
-    if (codeStart === -1 || codeStart >= offset) {
-      return false;
-    }
-
-    const tickCount = getBacktickRunLength(markdown, codeStart);
-    const codeEnd = findInlineCodeEnd(
-      markdown,
-      codeStart + tickCount,
-      tickCount,
-    );
-
-    if (codeEnd === -1) {
-      return false;
-    }
-
-    if (codeEnd > offset) {
-      return true;
-    }
-
-    index = codeEnd;
-  }
-
-  return false;
-}
-
 function rewriteHtmlHrefAttributes(
   markdown: string,
   context: Pick<APIContext, "site" | "url">,
@@ -299,41 +270,6 @@ function rewriteHtmlHrefAttributes(
   return rewriteAnchorHrefAttributes(markdown, (url) =>
     rewriteDocsUrl(url, context, currentPageId),
   );
-}
-
-function applyOutsideInlineCode(
-  markdown: string,
-  transform: (segment: string) => string,
-) {
-  let result = "";
-  let index = 0;
-
-  while (index < markdown.length) {
-    const codeStart = markdown.indexOf("`", index);
-
-    if (codeStart === -1) {
-      result += transform(markdown.slice(index));
-      break;
-    }
-
-    const tickCount = getBacktickRunLength(markdown, codeStart);
-    const codeEnd = findInlineCodeEnd(
-      markdown,
-      codeStart + tickCount,
-      tickCount,
-    );
-
-    if (codeEnd === -1) {
-      result += transform(markdown.slice(index));
-      break;
-    }
-
-    result += transform(markdown.slice(index, codeStart));
-    result += markdown.slice(codeStart, codeEnd);
-    index = codeEnd;
-  }
-
-  return result;
 }
 
 function findMarkdownLinkLabelStart(value: string, labelEnd: number) {
@@ -440,35 +376,6 @@ function isEscaped(value: string, index: number) {
   }
 
   return slashCount % 2 === 1;
-}
-
-function getBacktickRunLength(value: string, start: number) {
-  let length = 0;
-  while (value[start + length] === "`") {
-    length += 1;
-  }
-  return length;
-}
-
-function findInlineCodeEnd(value: string, start: number, tickCount: number) {
-  let index = start;
-
-  while (index < value.length) {
-    const tickStart = value.indexOf("`", index);
-
-    if (tickStart === -1) {
-      return -1;
-    }
-
-    const length = getBacktickRunLength(value, tickStart);
-    if (length === tickCount) {
-      return tickStart + tickCount;
-    }
-
-    index = tickStart + length;
-  }
-
-  return -1;
 }
 
 function rewriteDocsUrl(

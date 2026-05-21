@@ -73,6 +73,72 @@ export function hasMarkdownHtmlTag(value: string) {
   return false;
 }
 
+export function isInsideInlineCode(markdown: string, offset: number) {
+  let index = 0;
+
+  while (index < offset) {
+    const codeStart = findUnescapedBacktick(markdown, index);
+
+    if (codeStart === -1 || codeStart >= offset) {
+      return false;
+    }
+
+    const tickCount = getBacktickRunLength(markdown, codeStart);
+    const codeEnd = findInlineCodeEnd(
+      markdown,
+      codeStart + tickCount,
+      tickCount,
+    );
+
+    if (codeEnd === -1) {
+      return false;
+    }
+
+    if (codeEnd > offset) {
+      return true;
+    }
+
+    index = codeEnd;
+  }
+
+  return false;
+}
+
+export function applyOutsideInlineCode(
+  markdown: string,
+  transform: (segment: string) => string,
+) {
+  let result = "";
+  let index = 0;
+
+  while (index < markdown.length) {
+    const codeStart = findUnescapedBacktick(markdown, index);
+
+    if (codeStart === -1) {
+      result += transform(markdown.slice(index));
+      break;
+    }
+
+    const tickCount = getBacktickRunLength(markdown, codeStart);
+    const codeEnd = findInlineCodeEnd(
+      markdown,
+      codeStart + tickCount,
+      tickCount,
+    );
+
+    if (codeEnd === -1) {
+      result += transform(markdown.slice(index));
+      break;
+    }
+
+    result += transform(markdown.slice(index, codeStart));
+    result += markdown.slice(codeStart, codeEnd);
+    index = codeEnd;
+  }
+
+  return result;
+}
+
 export function decodeHtmlEntities(value: string): string {
   return value.replace(
     /&(?:#(\d+)|#x([\da-f]+)|(amp|apos|gt|lt|quot));/gi,
@@ -187,6 +253,64 @@ function countFenceCharacters(
 function getLongestBacktickRunLength(value: string) {
   const runs = value.match(/`+/g) ?? [];
   return runs.reduce((longest, run) => Math.max(longest, run.length), 0);
+}
+
+function findUnescapedBacktick(value: string, start: number) {
+  let index = start;
+
+  while (index < value.length) {
+    const tickStart = value.indexOf("`", index);
+    if (tickStart === -1 || !isEscaped(value, tickStart)) {
+      return tickStart;
+    }
+
+    index = tickStart + 1;
+  }
+
+  return -1;
+}
+
+function getBacktickRunLength(value: string, start: number) {
+  let length = 0;
+  while (value[start + length] === "`") {
+    length += 1;
+  }
+  return length;
+}
+
+function findInlineCodeEnd(value: string, start: number, tickCount: number) {
+  let index = start;
+
+  while (index < value.length) {
+    const tickStart = value.indexOf("`", index);
+
+    if (tickStart === -1) {
+      return -1;
+    }
+
+    const length = getBacktickRunLength(value, tickStart);
+    if (length === tickCount) {
+      return tickStart + tickCount;
+    }
+
+    index = tickStart + length;
+  }
+
+  return -1;
+}
+
+function isEscaped(value: string, index: number) {
+  let slashCount = 0;
+
+  for (
+    let offset = index - 1;
+    offset >= 0 && value[offset] === "\\";
+    offset -= 1
+  ) {
+    slashCount += 1;
+  }
+
+  return slashCount % 2 === 1;
 }
 
 const markdownHtmlTagNames = new Set([

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyOutsideInlineCode,
   decodeHtmlEntities,
   formatInlineCodeSpan,
   getCodeFenceLength,
   getOpeningFence,
   hasMarkdownHtmlTag,
+  isInsideInlineCode,
   isClosingFence,
   normalizeMarkdown,
   normalizeMarkdownHeadingText,
@@ -79,6 +81,29 @@ describe("hasMarkdownHtmlTag", () => {
     expect(hasMarkdownHtmlTag("If x < y, keep going.")).toBe(false);
     expect(hasMarkdownHtmlTag("Use List<String> values.")).toBe(false);
     expect(hasMarkdownHtmlTag("Use Array<string> values.")).toBe(false);
+  });
+});
+
+describe("inline code scanning", () => {
+  it("applies transforms outside inline code spans", () => {
+    expect(
+      applyOutsideInlineCode("See `do_not_change()` and change", (segment) =>
+        segment.replace("change", "update"),
+      ),
+    ).toBe("See `do_not_change()` and update");
+  });
+
+  it("does not treat escaped backticks as inline code delimiters", () => {
+    expect(
+      applyOutsideInlineCode("Use \\`literal\\` backticks", (segment) =>
+        segment.replace("backticks", "ticks"),
+      ),
+    ).toBe("Use \\`literal\\` ticks");
+  });
+
+  it("detects offsets inside real code spans only", () => {
+    expect(isInsideInlineCode("Use `literal` value", 6)).toBe(true);
+    expect(isInsideInlineCode("Use \\`literal\\` value", 6)).toBe(false);
   });
 });
 
