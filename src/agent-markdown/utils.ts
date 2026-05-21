@@ -398,12 +398,16 @@ function dedupeMarkdownPages(pages: MarkdownPage[]) {
 
   for (const page of pages) {
     const existing = pageById.get(page.id);
-    if (!existing || existing.entry.id.endsWith("/index")) {
+    if (!existing || isIndexEntryId(existing.entry.id)) {
       pageById.set(page.id, page);
     }
   }
 
   return [...pageById.values()];
+}
+
+function isIndexEntryId(id: string) {
+  return id === "index" || id.endsWith("/index");
 }
 
 function stripLeadingH1(markdown: string, title: string) {
@@ -422,15 +426,7 @@ function cleanSourceMarkdown(markdown: string) {
     const normalized = segment
       .replace(/^import\s.+$/gm, "")
       .replace(/^export\s.+$/gm, "")
-      .replace(/\{"\s+"\}/g, " ")
-      .replace(/<code\b[^>]*>([\s\S]*?)<\/code>/gi, (_match, text) => {
-        return `\`${extractHtmlFragmentText(String(text)).trim()}\``;
-      })
-      .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, (_match, attrs, text) => {
-        const href = String(attrs).match(/\bhref=(["'])([^"']+)\1/i)?.[2];
-        const label = extractHtmlFragmentText(String(text)).trim();
-        return href ? `[${label}](${href})` : label;
-      });
+      .replace(/\{"\s+"\}/g, " ");
 
     return renderSourceFragment(parse(normalized) as Node);
   });
@@ -447,20 +443,24 @@ function applyOutsideFencedCode(
 
   for (const match of markdown.matchAll(fencePattern)) {
     const index = match.index ?? 0;
-    result += transform(markdown.slice(lastIndex, index));
+    result += transformMarkdownSegment(markdown.slice(lastIndex, index));
     result += match[0];
     lastIndex = index + match[0].length;
   }
 
-  result += transform(markdown.slice(lastIndex));
-  return normalize ? normalizeMarkdown(result) : result;
+  result += transformMarkdownSegment(markdown.slice(lastIndex));
+  return normalize ? result.trim() : result;
+
+  function transformMarkdownSegment(segment: string) {
+    const transformed = transform(segment);
+    return normalize ? normalizeMarkdownSegment(transformed) : transformed;
+  }
 }
 
-function extractHtmlFragmentText(value: string) {
-  return getTextContent(parse(value) as Node);
-}
-
-function renderSourceFragment(node: Node): string {
+function renderSourceFragment(
+  node: Node,
+  { insidePre = false }: { insidePre?: boolean } = {},
+): string {
   if (node.type === TEXT_NODE) {
     return (node as TextNode).value;
   }
@@ -471,6 +471,7 @@ function renderSourceFragment(node: Node): string {
 
   const element = node as ElementNode;
   const name = element.name?.toLowerCase();
+  const childOptions = { insidePre: insidePre || name === "pre" };
 
   if (
     name &&
@@ -493,31 +494,31 @@ function renderSourceFragment(node: Node): string {
   }
 
   if (name === "a") {
-    const text = renderSourceChildren(element).replace(/\s+/g, " ").trim();
+    const text = renderSourceChildren(element, childOptions)
+      .replace(/\s+/g, " ")
+      .trim();
     const href = element.attributes.href;
     return href ? `[${text}](${href})` : text;
   }
 
-  if (name === "code" && element.parent?.type !== ELEMENT_NODE) {
+  if (name === "code" && !insidePre) {
     return `\`${getTextContent(element).trim()}\``;
   }
 
-  if (
-    name === "code" &&
-    (element.parent as ElementNode).name?.toLowerCase() !== "pre"
-  ) {
-    return `\`${getTextContent(element).trim()}\``;
-  }
-
-  return renderSourceChildren(element);
+  return renderSourceChildren(element, childOptions);
 }
 
-function renderSourceChildren(node: Node): string {
+function renderSourceChildren(
+  node: Node,
+  options: { insidePre?: boolean } = {},
+): string {
   if (!("children" in node)) {
     return "";
   }
 
-  return (node.children as Node[]).map(renderSourceFragment).join("");
+  return (node.children as Node[])
+    .map((child) => renderSourceFragment(child, options))
+    .join("");
 }
 
 function htmlToMarkdown(
@@ -531,7 +532,9 @@ function htmlToMarkdown(
   },
 ) {
   const root = parse(html) as Node;
-  return normalizeMarkdown(renderChildren(root, { context, currentPageId }));
+  return normalizeMarkdownOutsideFencedCode(
+    renderChildren(root, { context, currentPageId }),
+  );
 }
 
 function renderChildren(
@@ -619,14 +622,7 @@ function renderNode(
     return `_${renderInlineChildren(element, options)}_`;
   }
 
-  if (name === "code" && element.parent?.type !== ELEMENT_NODE) {
-    return `\`${renderInlineChildren(element, options)}\``;
-  }
-
-  if (
-    name === "code" &&
-    (element.parent as ElementNode).name?.toLowerCase() !== "pre"
-  ) {
+  if (name === "code") {
     return `\`${renderInlineChildren(element, options)}\``;
   }
 
@@ -661,7 +657,9 @@ function renderNode(
   }
 
   if (name === "blockquote") {
-    const content = normalizeMarkdown(renderChildren(element, options));
+    const content = normalizeMarkdownOutsideFencedCode(
+      renderChildren(element, options),
+    );
     return `\n\n${content
       .split("\n")
       .map((line) => (line ? `> ${line}` : ">"))
@@ -692,7 +690,9 @@ function renderListItem(
     currentPageId: string;
   },
 ) {
-  const content = normalizeMarkdown(renderChildren(item, options));
+  const content = normalizeMarkdownOutsideFencedCode(
+    renderChildren(item, options),
+  );
   const [firstLine = "", ...remainingLines] = content.split("\n");
   const continuation = remainingLines
     .map((line) => (line ? `  ${line}` : ""))
@@ -840,6 +840,43 @@ function normalizeMarkdown(markdown: string) {
 
   result += pendingSpaces;
   return result.trim();
+}
+
+function normalizeMarkdownOutsideFencedCode(markdown: string) {
+  return applyOutsideFencedCode(markdown, (segment) => segment).trim();
+}
+
+function normalizeMarkdownSegment(markdown: string) {
+  const normalized = normalizeMarkdown(markdown);
+
+  if (!normalized) {
+    return "";
+  }
+
+  const leadingNewlines = countBoundaryNewlines(markdown, "start");
+  const trailingNewlines = countBoundaryNewlines(markdown, "end");
+  return `${"\n".repeat(leadingNewlines)}${normalized}${"\n".repeat(trailingNewlines)}`;
+}
+
+function countBoundaryNewlines(value: string, boundary: "start" | "end") {
+  let count = 0;
+  const start = boundary === "start" ? 0 : value.length - 1;
+  const step = boundary === "start" ? 1 : -1;
+
+  for (let index = start; index >= 0 && index < value.length; index += step) {
+    const character = value[index];
+
+    if (character === "\n") {
+      count += 1;
+      continue;
+    }
+
+    if (character !== " " && character !== "\t" && character !== "\r") {
+      break;
+    }
+  }
+
+  return Math.min(count, 2);
 }
 
 function escapeTableCell(value: string) {
