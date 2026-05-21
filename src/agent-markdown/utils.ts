@@ -615,7 +615,7 @@ function renderSourceHtmlSegment(segment: string) {
   }
 
   try {
-    return renderSourceFragment(parse(segment) as Node);
+    return renderSourceFragment(parse(segment) as Node, { source: segment });
   } catch {
     return segment;
   }
@@ -669,7 +669,10 @@ function applyOutsideFencedCode(
 
 function renderSourceFragment(
   node: Node,
-  { insidePre = false }: { insidePre?: boolean } = {},
+  {
+    insidePre = false,
+    source,
+  }: { insidePre?: boolean; source?: string | undefined } = {},
 ): string {
   if (node.type === TEXT_NODE) {
     return decodeHtmlEntities((node as TextNode).value);
@@ -681,7 +684,7 @@ function renderSourceFragment(
 
   const element = node as ElementNode;
   const name = element.name?.toLowerCase();
-  const childOptions = { insidePre: insidePre || name === "pre" };
+  const childOptions = { insidePre: insidePre || name === "pre", source };
 
   if (
     name &&
@@ -727,12 +730,16 @@ function renderSourceFragment(
     );
   }
 
+  if (name && !sourceHtmlTagNames.has(name)) {
+    return renderUnknownSourceHtmlElement(element, childOptions);
+  }
+
   return renderSourceChildren(element, childOptions);
 }
 
 function renderSourceChildren(
   node: Node,
-  options: { insidePre?: boolean } = {},
+  options: { insidePre?: boolean; source?: string | undefined } = {},
 ): string {
   if (!("children" in node)) {
     return "";
@@ -742,6 +749,57 @@ function renderSourceChildren(
     .map((child) => renderSourceFragment(child, options))
     .join("");
 }
+
+function renderUnknownSourceHtmlElement(
+  element: ElementNode,
+  options: { insidePre?: boolean; source?: string | undefined },
+) {
+  const location = getElementLocation(element);
+  if (!options.source || !location?.[0]) {
+    return renderSourceChildren(element, options);
+  }
+
+  if (location[1]) {
+    return options.source.slice(location[0].start, location[1].end);
+  }
+
+  return `${options.source.slice(location[0].start, location[0].end)}${renderSourceChildren(element, options)}`;
+}
+
+function getElementLocation(element: ElementNode) {
+  return (
+    element as ElementNode & {
+      loc?: [{ end: number; start: number }, { end: number; start: number }?];
+    }
+  ).loc;
+}
+
+const sourceHtmlTagNames = new Set([
+  "a",
+  "b",
+  "blockquote",
+  "br",
+  "code",
+  "dd",
+  "div",
+  "dl",
+  "dt",
+  "em",
+  "li",
+  "ol",
+  "p",
+  "pre",
+  "span",
+  "strong",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "tr",
+  "ul",
+]);
 
 function htmlToMarkdown(
   html: string,
