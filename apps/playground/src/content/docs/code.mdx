@@ -5,6 +5,9 @@ description: Editor frames, terminal frames, diffs, and long-line behavior.
 
 Use this page for Expressive Code and markdown code block checks.
 
+Inline code should share the same calm code surface as larger examples:
+`pnpm --filter @sentry/starlight-theme-playground dev --host 0.0.0.0`.
+
 ## JavaScript
 
 ```ts title="theme-fixture.ts"
@@ -27,6 +30,11 @@ export function summarize(results: EvaluationResult[]) {
 ```sh title="Terminal"
 pnpm --filter @sentry/starlight-theme-playground dev
 pnpm run test
+```
+
+```sh
+pnpm release:check
+pnpm pack:dry
 ```
 
 ## Diff

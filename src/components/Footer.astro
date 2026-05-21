@@ -1,0 +1,61 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+import Pagination from "virtual:starlight/components/Pagination";
+import config from "virtual:starlight/user-config";
+
+const socialLinks = Array.isArray(config.social)
+  ? config.social
+  : config.social && typeof config.social === "object"
+    ? Object.entries(config.social).map(([icon, href]) => ({
+        href: String(href),
+        icon,
+        label: icon,
+      }))
+    : [];
+---
+
+<footer>
+  <table
+    role="presentation"
+    width="100%"
+    height="32"
+    cellspacing="0"
+    cellpadding="0"
+  >
+    <tbody>
+      <tr>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <Pagination />
+
+  {
+    socialLinks.length > 0 && (
+      <table
+        role="presentation"
+        width="100%"
+        height="72"
+        cellspacing="0"
+        cellpadding="0"
+      >
+        <tbody>
+          <tr>
+            <td align="center" valign="bottom">
+              <nav aria-label="Project links">
+                {socialLinks.map(({ label, href, icon }) => (
+                  <a {href} rel="me" aria-label={label} title={label}>
+                    <font color="#888888">
+                      <Icon name={icon} />
+                    </font>
+                  </a>
+                ))}
+              </nav>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    )
+  }
+</footer>

@@ -44,6 +44,67 @@ This caution should remain readable even though the theme maps semantic colors t
 | Code       | Copyable examples | Horizontal overflow   |
 | Tables     | API details       | Mobile overflow       |
 
+## Key/Value List
+
+<dl class="sentry-key-value-list">
+  <div>
+    <dt>
+      <code>name</code>
+      <span class="sentry-property-meta">string</span>
+    </dt>
+    <dd>Skill name or local path.</dd>
+  </div>
+  <div>
+    <dt>
+      <code>paths</code>
+      <span class="sentry-property-meta">array</span>
+    </dt>
+    <dd>Files to include as glob patterns.</dd>
+  </div>
+  <div>
+    <dt>
+      <code>failOn</code>
+      <span class="sentry-property-meta">severity</span>
+    </dt>
+    <dd>
+      Minimum severity to fail: <code>critical</code>, <code>high</code>,
+      <code>medium</code>, <code>low</code>, <code>info</code>, or{" "}
+      <code>off</code>.
+    </dd>
+  </div>
+  <div>
+    <dt>
+      <code>remote</code>
+      <span class="sentry-property-meta">optional</span>
+    </dt>
+    <dd>
+      GitHub repository for remote skills, such as <code>owner/repo</code> or{" "}
+      <code>owner/repo@sha</code>.
+    </dd>
+  </div>
+</dl>
+
+```mdx title="key-value-list.mdx"
+<dl class="sentry-key-value-list">
+  <div>
+    <dt>
+      <code>name</code>
+      <span class="sentry-property-meta">string</span>
+    </dt>
+    <dd>Skill name or local path.</dd>
+  </div>
+  <div>
+    <dt>
+      <code>remote</code>
+      <span class="sentry-property-meta">optional</span>
+    </dt>
+    <dd>
+      GitHub repository for remote skills, such as <code>owner/repo</code>.
+    </dd>
+  </div>
+</dl>
+```
+
 ## Cards
 
 <div class="fixture-grid not-content">
@@ -60,6 +121,19 @@ This caution should remain readable even though the theme maps semantic colors t
     </span>
   </div>
 </div>
+
+```mdx title="fixture-card.mdx"
+<div class="fixture-grid not-content">
+  <div class="fixture-panel">
+    <strong>Navigation</strong>
+    <span>Check current page states, hover styles, and sidebar headings.</span>
+  </div>
+  <div class="fixture-panel">
+    <strong>Responsive</strong>
+    <span>Resize the viewport and confirm content stays inside the page.</span>
+  </div>
+</div>
+```
 
 ## Heading Depth
 
