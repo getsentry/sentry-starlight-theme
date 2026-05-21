@@ -49,10 +49,12 @@ async function loadMarkdownPages(): Promise<MarkdownPage[]> {
     return import.meta.env.MODE !== "production" || data.draft !== true;
   })) as DocsEntry[];
 
-  return entries.map((entry: DocsEntry) => ({
-    entry,
-    id: normalizeIndexId(entry.id),
-  }));
+  return dedupeMarkdownPages(
+    entries.map((entry: DocsEntry) => ({
+      entry,
+      id: normalizeIndexId(entry.id),
+    })),
+  );
 }
 
 export async function getMarkdownPageById(
@@ -175,16 +177,23 @@ function rewriteMarkdownLinks(
   context: Pick<APIContext, "site" | "url">,
   currentPageId: string,
 ): string {
-  return rewriteMarkdownReferenceLinks(
-    rewriteInlineMarkdownLinks(markdown, context, currentPageId),
-    context,
-    currentPageId,
-  ).replace(
-    /\bhref=(["'])([^"']+)\1/g,
-    (match: string, quote: string, url: string) => {
-      const rewritten = rewriteDocsUrl(url, context, currentPageId);
-      return rewritten === url ? match : `href=${quote}${rewritten}${quote}`;
-    },
+  return applyOutsideFencedCode(
+    markdown,
+    (segment) =>
+      rewriteMarkdownReferenceLinks(
+        rewriteInlineMarkdownLinks(segment, context, currentPageId),
+        context,
+        currentPageId,
+      ).replace(
+        /\bhref=(["'])([^"']+)\1/g,
+        (match: string, quote: string, url: string) => {
+          const rewritten = rewriteDocsUrl(url, context, currentPageId);
+          return rewritten === url
+            ? match
+            : `href=${quote}${rewritten}${quote}`;
+        },
+      ),
+    { normalize: false },
   );
 }
 
@@ -198,6 +207,22 @@ function rewriteInlineMarkdownLinks(
 
   while (index < markdown.length) {
     const linkStart = markdown.indexOf("](", index);
+    const codeStart = markdown.indexOf("`", index);
+
+    if (codeStart !== -1 && (linkStart === -1 || codeStart < linkStart)) {
+      const tickCount = getBacktickRunLength(markdown, codeStart);
+      const codeEnd = findInlineCodeEnd(
+        markdown,
+        codeStart + tickCount,
+        tickCount,
+      );
+      if (codeEnd !== -1) {
+        result += markdown.slice(index, codeEnd);
+        index = codeEnd;
+        continue;
+      }
+    }
+
     if (linkStart === -1) {
       result += markdown.slice(index);
       break;
@@ -253,9 +278,23 @@ function rewriteMarkdownReferenceLinks(
 }
 
 function findMarkdownUrlEnd(value: string, start: number, terminator?: string) {
+  let parenDepth = 0;
+
   for (let index = start; index < value.length; index += 1) {
     const character = value[index];
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (terminator === ")" && character === "(") {
+      parenDepth += 1;
+      continue;
+    }
     if (terminator && character === terminator) {
+      if (parenDepth > 0) {
+        parenDepth -= 1;
+        continue;
+      }
       return index;
     }
     if (!terminator && (character === " " || character === "\t")) {
@@ -266,11 +305,31 @@ function findMarkdownUrlEnd(value: string, start: number, terminator?: string) {
   return terminator ? -1 : value.length;
 }
 
+function getBacktickRunLength(value: string, start: number) {
+  let length = 0;
+  while (value[start + length] === "`") {
+    length += 1;
+  }
+  return length;
+}
+
+function findInlineCodeEnd(value: string, start: number, tickCount: number) {
+  const ticks = "`".repeat(tickCount);
+  const end = value.indexOf(ticks, start);
+  return end === -1 ? -1 : end + tickCount;
+}
+
 function rewriteDocsUrl(
   rawUrl: string,
   context: Pick<APIContext, "site" | "url">,
   currentPageId: string,
 ): string {
+  if (rawUrl.startsWith("<") && rawUrl.endsWith(">")) {
+    const innerUrl = rawUrl.slice(1, -1);
+    const rewritten = rewriteDocsUrl(innerUrl, context, currentPageId);
+    return rewritten === innerUrl ? rawUrl : `<${rewritten}>`;
+  }
+
   if (
     rawUrl.startsWith("#") ||
     rawUrl.startsWith("mailto:") ||
@@ -334,6 +393,19 @@ function normalizeIndexId(id: string) {
   return id.replace(/(?:^|\/)index$/, "");
 }
 
+function dedupeMarkdownPages(pages: MarkdownPage[]) {
+  const pageById = new Map<string, MarkdownPage>();
+
+  for (const page of pages) {
+    const existing = pageById.get(page.id);
+    if (!existing || existing.entry.id.endsWith("/index")) {
+      pageById.set(page.id, page);
+    }
+  }
+
+  return [...pageById.values()];
+}
+
 function stripLeadingH1(markdown: string, title: string) {
   const lines = markdown.replace(/^\s+/, "").split("\n");
   const firstLine = lines[0]?.replace(/^#\s+/, "").trim();
@@ -367,6 +439,7 @@ function cleanSourceMarkdown(markdown: string) {
 function applyOutsideFencedCode(
   markdown: string,
   transform: (segment: string) => string,
+  { normalize = true }: { normalize?: boolean } = {},
 ) {
   const fencePattern = /^```[\s\S]*?^```/gm;
   let result = "";
@@ -380,7 +453,7 @@ function applyOutsideFencedCode(
   }
 
   result += transform(markdown.slice(lastIndex));
-  return normalizeMarkdown(result);
+  return normalize ? normalizeMarkdown(result) : result;
 }
 
 function extractHtmlFragmentText(value: string) {
@@ -564,8 +637,8 @@ function renderNode(
     );
     const language = getCodeLanguage(codeElement);
     const code = codeElement
-      ? getTextContent(codeElement)
-      : getTextContent(element);
+      ? getDecodedTextContent(codeElement)
+      : getDecodedTextContent(element);
     return `\n\n\`\`\`${language}\n${code.replace(/\n+$/, "")}\n\`\`\`\n\n`;
   }
 
@@ -695,6 +768,42 @@ function getTextContent(node: Node): string {
     return "";
   }
   return node.children.map(getTextContent).join("");
+}
+
+function getDecodedTextContent(node: Node): string {
+  return decodeHtmlEntities(getTextContent(node));
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value.replace(
+    /&(?:#(\d+)|#x([\da-f]+)|(amp|apos|gt|lt|quot));/gi,
+    (entity, decimal, hex, named) => {
+      if (decimal) {
+        return codePointToString(Number(decimal), entity);
+      }
+      if (hex) {
+        return codePointToString(Number.parseInt(hex, 16), entity);
+      }
+
+      return (
+        {
+          amp: "&",
+          apos: "'",
+          gt: ">",
+          lt: "<",
+          quot: '"',
+        }[String(named).toLowerCase()] ?? entity
+      );
+    },
+  );
+}
+
+function codePointToString(codePoint: number, fallback: string) {
+  try {
+    return String.fromCodePoint(codePoint);
+  } catch {
+    return fallback;
+  }
 }
 
 function getCodeLanguage(codeElement: ElementNode | undefined) {
