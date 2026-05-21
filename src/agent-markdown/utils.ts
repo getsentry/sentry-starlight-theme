@@ -155,21 +155,95 @@ function rewriteMarkdownLinks(
   context: Pick<APIContext, "site" | "url">,
   currentPageId: string,
 ): string {
+  return rewriteMarkdownReferenceLinks(
+    rewriteInlineMarkdownLinks(markdown, context, currentPageId),
+    context,
+    currentPageId,
+  ).replace(
+    /\bhref=(["'])([^"']+)\1/g,
+    (match: string, quote: string, url: string) => {
+      const rewritten = rewriteDocsUrl(url, context, currentPageId);
+      return rewritten === url ? match : `href=${quote}${rewritten}${quote}`;
+    },
+  );
+}
+
+function rewriteInlineMarkdownLinks(
+  markdown: string,
+  context: Pick<APIContext, "site" | "url">,
+  currentPageId: string,
+) {
+  let result = "";
+  let index = 0;
+
+  while (index < markdown.length) {
+    const linkStart = markdown.indexOf("](", index);
+    if (linkStart === -1) {
+      result += markdown.slice(index);
+      break;
+    }
+
+    const urlStart = linkStart + 2;
+    const urlEnd = findMarkdownUrlEnd(markdown, urlStart, ")");
+    if (urlEnd === -1) {
+      result += markdown.slice(index);
+      break;
+    }
+
+    const url = markdown.slice(urlStart, urlEnd);
+    result += markdown.slice(index, urlStart);
+    result += rewriteDocsUrl(url, context, currentPageId);
+    index = urlEnd;
+  }
+
+  return result;
+}
+
+function rewriteMarkdownReferenceLinks(
+  markdown: string,
+  context: Pick<APIContext, "site" | "url">,
+  currentPageId: string,
+) {
   return markdown
-    .replace(
-      /(\]\(|\]\[[^\]]+\]:\s*)([^)\s]+)([)\s])/g,
-      (match: string, prefix: string, url: string, suffix: string) => {
-        const rewritten = rewriteDocsUrl(url, context, currentPageId);
-        return rewritten === url ? match : `${prefix}${rewritten}${suffix}`;
-      },
-    )
-    .replace(
-      /\bhref=(["'])([^"']+)\1/g,
-      (match: string, quote: string, url: string) => {
-        const rewritten = rewriteDocsUrl(url, context, currentPageId);
-        return rewritten === url ? match : `href=${quote}${rewritten}${quote}`;
-      },
-    );
+    .split("\n")
+    .map((line) => {
+      const labelEnd = line.indexOf("]:");
+      if (!line.startsWith("[") || labelEnd === -1) {
+        return line;
+      }
+
+      let urlStart = labelEnd + 2;
+      while (line[urlStart] === " " || line[urlStart] === "\t") {
+        urlStart += 1;
+      }
+
+      const urlEnd = findMarkdownUrlEnd(line, urlStart);
+      if (urlEnd === -1) {
+        return line;
+      }
+
+      const url = line.slice(urlStart, urlEnd);
+      return `${line.slice(0, urlStart)}${rewriteDocsUrl(
+        url,
+        context,
+        currentPageId,
+      )}${line.slice(urlEnd)}`;
+    })
+    .join("\n");
+}
+
+function findMarkdownUrlEnd(value: string, start: number, terminator?: string) {
+  for (let index = start; index < value.length; index += 1) {
+    const character = value[index];
+    if (terminator && character === terminator) {
+      return index;
+    }
+    if (!terminator && (character === " " || character === "\t")) {
+      return index;
+    }
+  }
+
+  return terminator ? -1 : value.length;
 }
 
 function rewriteDocsUrl(
