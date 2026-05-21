@@ -64,7 +64,7 @@ export function sentryAgentMarkdown({
         }
 
         const components: StarlightComponentOverrides = {
-          ...(config.components ?? {}),
+          ...config.components,
         };
         if (markdownActions && !markdownRoutes) {
           logger.warn(

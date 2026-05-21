@@ -72,7 +72,7 @@ export function sentryStarlightTheme({
     hooks: {
       "config:setup"({ config, updateConfig, logger }) {
         const components: StarlightComponentOverrides = {
-          ...(config.components ?? {}),
+          ...config.components,
         };
 
         setStarlightComponentOverride({
