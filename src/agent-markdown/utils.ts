@@ -813,10 +813,33 @@ function getCodeLanguage(codeElement: ElementNode | undefined) {
 }
 
 function normalizeMarkdown(markdown: string) {
-  return markdown
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  let result = "";
+  let pendingSpaces = "";
+  let newlineCount = 0;
+
+  for (const character of markdown) {
+    if (character === " " || character === "\t") {
+      pendingSpaces += character;
+      continue;
+    }
+
+    if (character === "\n") {
+      pendingSpaces = "";
+      newlineCount += 1;
+      if (newlineCount <= 2) {
+        result += "\n";
+      }
+      continue;
+    }
+
+    result += pendingSpaces;
+    pendingSpaces = "";
+    newlineCount = 0;
+    result += character;
+  }
+
+  result += pendingSpaces;
+  return result.trim();
 }
 
 function escapeTableCell(value: string) {
