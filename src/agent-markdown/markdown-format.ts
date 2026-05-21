@@ -52,6 +52,51 @@ export function formatInlineCodeSpan(code: string) {
   return `${delimiter}${padding}${code}${padding}${delimiter}`;
 }
 
+export function normalizeMarkdownHeadingText(value: string) {
+  return stripMarkdownFormatting(decodeHtmlEntities(value))
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+export function hasMarkdownHtmlTag(value: string) {
+  const tagPattern = /<\/?([a-z][a-z\d:-]*)(?=[\s>/])/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagPattern.exec(value))) {
+    const tagName = match[1];
+    if (tagName && markdownHtmlTagNames.has(tagName)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function decodeHtmlEntities(value: string): string {
+  return value.replace(
+    /&(?:#(\d+)|#x([\da-f]+)|(amp|apos|gt|lt|quot));/gi,
+    (entity, decimal, hex, named) => {
+      if (decimal) {
+        return codePointToString(Number(decimal), entity);
+      }
+      if (hex) {
+        return codePointToString(Number.parseInt(hex, 16), entity);
+      }
+
+      return (
+        {
+          amp: "&",
+          apos: "'",
+          gt: ">",
+          lt: "<",
+          quot: '"',
+        }[String(named).toLowerCase()] ?? entity
+      );
+    },
+  );
+}
+
 export function normalizeMarkdown(markdown: string) {
   let result = "";
   let pendingSpaces = "";
@@ -142,6 +187,69 @@ function countFenceCharacters(
 function getLongestBacktickRunLength(value: string) {
   const runs = value.match(/`+/g) ?? [];
   return runs.reduce((longest, run) => Math.max(longest, run.length), 0);
+}
+
+const markdownHtmlTagNames = new Set([
+  "a",
+  "b",
+  "blockquote",
+  "br",
+  "button",
+  "code",
+  "dd",
+  "div",
+  "dl",
+  "dt",
+  "em",
+  "embed",
+  "iframe",
+  "img",
+  "li",
+  "noscript",
+  "object",
+  "ol",
+  "p",
+  "pre",
+  "script",
+  "span",
+  "strong",
+  "style",
+  "svg",
+  "table",
+  "tbody",
+  "td",
+  "tfoot",
+  "th",
+  "thead",
+  "tr",
+  "ul",
+]);
+
+function stripMarkdownFormatting(value: string) {
+  let result = value
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, "$1")
+    .replace(/(`+)([\s\S]*?)\1/g, "$2");
+  let previous: string;
+
+  do {
+    previous = result;
+    result = result.replace(
+      /(^|[\s([{"'])(\*\*|__|\*|_)(?=\S)([\s\S]*?\S)\2(?=$|[\s)\].,;:!?'"])/g,
+      "$1$3",
+    );
+  } while (result !== previous);
+
+  return result;
+}
+
+function codePointToString(codePoint: number, fallback: string) {
+  try {
+    return String.fromCodePoint(codePoint);
+  } catch {
+    return fallback;
+  }
 }
 
 function findAnchorTagStart(markdown: string, start: number) {

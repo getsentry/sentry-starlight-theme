@@ -9,11 +9,14 @@ import {
   type TextNode,
 } from "ultrahtml";
 import {
+  decodeHtmlEntities,
   formatInlineCodeSpan,
   getCodeFenceLength,
   getOpeningFence,
+  hasMarkdownHtmlTag,
   isClosingFence,
   normalizeMarkdown,
+  normalizeMarkdownHeadingText,
   rewriteAnchorHrefAttributes,
   type MarkdownFence,
 } from "./markdown-format";
@@ -557,9 +560,13 @@ function isIndexEntryId(id: string) {
 
 function stripLeadingH1(markdown: string, title: string) {
   const lines = markdown.replace(/^\s+/, "").split("\n");
-  const firstLine = lines[0]?.replace(/^#\s+/, "").trim();
+  const firstLine = lines[0]?.match(/^#\s+(.+)$/)?.[1]?.trim();
 
-  if (firstLine?.toLowerCase() !== title.trim().toLowerCase()) {
+  if (
+    !firstLine ||
+    normalizeMarkdownHeadingText(firstLine) !==
+      normalizeMarkdownHeadingText(title)
+  ) {
     return markdown;
   }
 
@@ -578,7 +585,7 @@ function cleanSourceMarkdown(markdown: string) {
 }
 
 function renderSourceHtmlSegment(segment: string) {
-  if (!segment.includes("<")) {
+  if (!hasMarkdownHtmlTag(segment)) {
     return segment;
   }
 
@@ -957,38 +964,6 @@ function getTextContent(node: Node): string {
 
 function getDecodedTextContent(node: Node): string {
   return decodeHtmlEntities(getTextContent(node));
-}
-
-function decodeHtmlEntities(value: string): string {
-  return value.replace(
-    /&(?:#(\d+)|#x([\da-f]+)|(amp|apos|gt|lt|quot));/gi,
-    (entity, decimal, hex, named) => {
-      if (decimal) {
-        return codePointToString(Number(decimal), entity);
-      }
-      if (hex) {
-        return codePointToString(Number.parseInt(hex, 16), entity);
-      }
-
-      return (
-        {
-          amp: "&",
-          apos: "'",
-          gt: ">",
-          lt: "<",
-          quot: '"',
-        }[String(named).toLowerCase()] ?? entity
-      );
-    },
-  );
-}
-
-function codePointToString(codePoint: number, fallback: string) {
-  try {
-    return String.fromCodePoint(codePoint);
-  } catch {
-    return fallback;
-  }
 }
 
 function getCodeLanguage(codeElement: ElementNode | undefined) {

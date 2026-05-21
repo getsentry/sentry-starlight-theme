@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  decodeHtmlEntities,
   formatInlineCodeSpan,
   getCodeFenceLength,
   getOpeningFence,
+  hasMarkdownHtmlTag,
   isClosingFence,
   normalizeMarkdown,
+  normalizeMarkdownHeadingText,
   rewriteAnchorHrefAttributes,
 } from "../../src/agent-markdown/markdown-format";
 
@@ -36,6 +39,46 @@ describe("formatInlineCodeSpan", () => {
   it("pads code content that starts or ends with a backtick", () => {
     expect(formatInlineCodeSpan("`hello`")).toBe("`` `hello` ``");
     expect(formatInlineCodeSpan("foo `bar`")).toBe("`` foo `bar` ``");
+  });
+});
+
+describe("normalizeMarkdownHeadingText", () => {
+  it("decodes entities and collapses whitespace", () => {
+    expect(normalizeMarkdownHeadingText("Q&amp;A\n   guide")).toBe("q&a guide");
+  });
+
+  it("compares rendered Markdown formatting as visible text", () => {
+    expect(normalizeMarkdownHeadingText("_Fast_ **Setup**")).toBe("fast setup");
+    expect(normalizeMarkdownHeadingText("[Code `owner/repo`](./repo/)")).toBe(
+      "code owner/repo",
+    );
+  });
+
+  it("preserves underscores inside words", () => {
+    expect(normalizeMarkdownHeadingText("SENTRY_AUTH_TOKEN")).toBe(
+      "sentry_auth_token",
+    );
+  });
+});
+
+describe("decodeHtmlEntities", () => {
+  it("decodes named, decimal, and hex entities", () => {
+    expect(decodeHtmlEntities("&lt;Q&amp;A &#35;1 &#x23;2&gt;")).toBe(
+      "<Q&A #1 #2>",
+    );
+  });
+});
+
+describe("hasMarkdownHtmlTag", () => {
+  it("detects common inline and block HTML tags", () => {
+    expect(hasMarkdownHtmlTag('Use <a href="/docs/">docs</a>')).toBe(true);
+    expect(hasMarkdownHtmlTag("<div><code>value</code></div>")).toBe(true);
+  });
+
+  it("ignores comparison operators and generic type parameters", () => {
+    expect(hasMarkdownHtmlTag("If x < y, keep going.")).toBe(false);
+    expect(hasMarkdownHtmlTag("Use List<String> values.")).toBe(false);
+    expect(hasMarkdownHtmlTag("Use Array<string> values.")).toBe(false);
   });
 });
 
