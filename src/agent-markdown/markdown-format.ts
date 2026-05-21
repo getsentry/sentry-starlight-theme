@@ -50,6 +50,37 @@ export function getCodeFenceLength(code: string) {
   return Math.max(3, longestRun + 1);
 }
 
+export function normalizeMarkdown(markdown: string) {
+  let result = "";
+  let pendingSpaces = "";
+  let newlineCount = 0;
+
+  for (const character of markdown.replace(/\r\n?/g, "\n")) {
+    if (character === " " || character === "\t") {
+      pendingSpaces += character;
+      continue;
+    }
+
+    if (character === "\n") {
+      newlineCount += 1;
+      if (newlineCount <= 2) {
+        result += pendingSpaces;
+        result += "\n";
+      }
+      pendingSpaces = "";
+      continue;
+    }
+
+    result += pendingSpaces;
+    pendingSpaces = "";
+    newlineCount = 0;
+    result += character;
+  }
+
+  result += pendingSpaces;
+  return result.trim();
+}
+
 export function rewriteAnchorHrefAttributes(
   markdown: string,
   rewriteUrl: (url: string) => string,
@@ -183,11 +214,15 @@ function rewriteAnchorTagHref(
     }
 
     const name = tag.slice(nameStart, index).toLowerCase();
+    const attributeEnd = index;
     while (isHtmlWhitespace(tag[index])) {
       index += 1;
     }
 
     if (tag[index] !== "=") {
+      if (index === attributeEnd) {
+        index += 1;
+      }
       continue;
     }
 

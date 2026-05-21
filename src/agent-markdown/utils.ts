@@ -12,6 +12,7 @@ import {
   getCodeFenceLength,
   getOpeningFence,
   isClosingFence,
+  normalizeMarkdown,
   rewriteAnchorHrefAttributes,
   type MarkdownFence,
 } from "./markdown-format";
@@ -989,37 +990,6 @@ function getCodeLanguage(codeElement: ElementNode | undefined) {
   const className = codeElement?.attributes.class ?? "";
   const match = className.match(/(?:^|\s)language-([^\s]+)/);
   return match?.[1] ?? "";
-}
-
-function normalizeMarkdown(markdown: string) {
-  let result = "";
-  let pendingSpaces = "";
-  let newlineCount = 0;
-
-  for (const character of markdown) {
-    if (character === " " || character === "\t") {
-      pendingSpaces += character;
-      continue;
-    }
-
-    if (character === "\n") {
-      newlineCount += 1;
-      if (newlineCount <= 2) {
-        result += pendingSpaces;
-        result += "\n";
-      }
-      pendingSpaces = "";
-      continue;
-    }
-
-    result += pendingSpaces;
-    pendingSpaces = "";
-    newlineCount = 0;
-    result += character;
-  }
-
-  result += pendingSpaces;
-  return result.trim();
 }
 
 function normalizeMarkdownOutsideFencedCode(markdown: string) {

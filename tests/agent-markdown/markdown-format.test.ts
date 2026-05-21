@@ -4,6 +4,7 @@ import {
   getCodeFenceLength,
   getOpeningFence,
   isClosingFence,
+  normalizeMarkdown,
   rewriteAnchorHrefAttributes,
 } from "../../src/agent-markdown/markdown-format";
 
@@ -44,6 +45,15 @@ describe("fenced code parsing", () => {
   });
 });
 
+describe("normalizeMarkdown", () => {
+  it("collapses repeated blank lines with LF and CRLF endings", () => {
+    expect(normalizeMarkdown("First\n\n\nSecond")).toBe("First\n\nSecond");
+    expect(normalizeMarkdown("First\r\n\r\n\r\nSecond")).toBe(
+      "First\n\nSecond",
+    );
+  });
+});
+
 describe("rewriteAnchorHrefAttributes", () => {
   const rewriteUrl = (url: string) => `/docs${url}`;
 
@@ -81,5 +91,14 @@ describe("rewriteAnchorHrefAttributes", () => {
         rewriteUrl,
       ),
     ).toBe('<a title="1 > 0" href="/docs/intro/">Intro</a>');
+  });
+
+  it("keeps scanning after valueless attributes", () => {
+    expect(
+      rewriteAnchorHrefAttributes(
+        '<a download href="/intro/">Intro</a>',
+        rewriteUrl,
+      ),
+    ).toBe('<a download href="/docs/intro/">Intro</a>');
   });
 });
