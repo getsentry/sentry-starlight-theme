@@ -647,7 +647,7 @@ function renderSourceFragment(
   { insidePre = false }: { insidePre?: boolean } = {},
 ): string {
   if (node.type === TEXT_NODE) {
-    return (node as TextNode).value;
+    return decodeHtmlEntities((node as TextNode).value);
   }
 
   if (node.type !== ELEMENT_NODE && !("children" in node)) {
@@ -758,7 +758,7 @@ function renderNode(
   },
 ): string {
   if (node.type === TEXT_NODE) {
-    return (node as TextNode).value;
+    return decodeHtmlEntities((node as TextNode).value);
   }
 
   if (node.type !== ELEMENT_NODE) {
