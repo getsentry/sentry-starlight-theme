@@ -162,7 +162,7 @@ function formatYamlFrontmatter({
     yaml += `description: ${JSON.stringify(description.replace(/\r?\n/g, " "))}\n`;
   }
   if (url) {
-    yaml += `url: ${url}\n`;
+    yaml += `url: ${JSON.stringify(url)}\n`;
   }
   yaml += "---\n\n";
   return yaml;
