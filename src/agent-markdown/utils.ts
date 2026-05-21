@@ -194,12 +194,14 @@ function rewriteInlineMarkdownLinks(
   context: Pick<APIContext, "site" | "url">,
   currentPageId: string,
 ) {
-  return applyOutsideInlineCode(markdown, (segment) =>
-    rewriteHtmlHrefAttributes(
-      rewriteInlineMarkdownLinksInText(segment, context, currentPageId),
-      context,
-      currentPageId,
-    ),
+  const markdownLinksRewritten = rewriteInlineMarkdownLinksInText(
+    markdown,
+    context,
+    currentPageId,
+  );
+
+  return applyOutsideInlineCode(markdownLinksRewritten, (segment) =>
+    rewriteHtmlHrefAttributes(segment, context, currentPageId),
   );
 }
 
@@ -220,7 +222,11 @@ function rewriteInlineMarkdownLinksInText(
     }
 
     const labelStart = findMarkdownLinkLabelStart(markdown, linkStart);
-    if (labelStart === -1 || labelStart < index) {
+    if (
+      labelStart === -1 ||
+      labelStart < index ||
+      isInsideInlineCode(markdown, linkStart)
+    ) {
       result += markdown.slice(index, linkStart + 2);
       index = linkStart + 2;
       continue;
@@ -240,6 +246,33 @@ function rewriteInlineMarkdownLinksInText(
   }
 
   return result;
+}
+
+function isInsideInlineCode(markdown: string, offset: number) {
+  let index = markdown.lastIndexOf("\n", offset - 1) + 1;
+
+  while (index < offset) {
+    const codeStart = markdown.indexOf("`", index);
+
+    if (codeStart === -1 || codeStart >= offset) {
+      return false;
+    }
+
+    const tickCount = getBacktickRunLength(markdown, codeStart);
+    const codeEnd = findInlineCodeEnd(
+      markdown,
+      codeStart + tickCount,
+      tickCount,
+    );
+
+    if (codeEnd === -1 || codeEnd > offset) {
+      return true;
+    }
+
+    index = codeEnd;
+  }
+
+  return false;
 }
 
 function rewriteHtmlHrefAttributes(
