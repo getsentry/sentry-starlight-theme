@@ -883,7 +883,9 @@ function renderNode(
     const code = codeElement
       ? getDecodedTextContent(codeElement)
       : getDecodedTextContent(element);
-    return `\n\n\`\`\`${language}\n${code.replace(/\n+$/, "")}\n\`\`\`\n\n`;
+    const trimmedCode = code.replace(/\n+$/, "");
+    const fence = "`".repeat(getCodeFenceLength(trimmedCode));
+    return `\n\n${fence}${language}\n${trimmedCode}\n${fence}\n\n`;
   }
 
   if (name === "br") {
@@ -1059,6 +1061,15 @@ function getCodeLanguage(codeElement: ElementNode | undefined) {
   const className = codeElement?.attributes.class ?? "";
   const match = className.match(/(?:^|\s)language-([^\s]+)/);
   return match?.[1] ?? "";
+}
+
+function getCodeFenceLength(code: string) {
+  const runs = code.match(/`+/g) ?? [];
+  const longestRun = runs.reduce((longest, run) => {
+    return Math.max(longest, run.length);
+  }, 0);
+
+  return Math.max(3, longestRun + 1);
 }
 
 function normalizeMarkdown(markdown: string) {
