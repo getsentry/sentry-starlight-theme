@@ -8,7 +8,12 @@ import {
   type Node,
   type TextNode,
 } from "ultrahtml";
-import { isAssetPath, isInBase, joinBase, toMarkdownPath } from "./path-utils";
+import {
+  isIgnoredPath,
+  isInBase,
+  joinBase,
+  toMarkdownPath,
+} from "./path-utils";
 import { base as siteBase } from "virtual:sentry-starlight-theme/agent-markdown/config";
 
 type DocsEntry = CollectionEntry<"docs"> & {
@@ -57,6 +62,16 @@ export async function getMarkdownPageById(
   return pages.find((page) => page.id === id);
 }
 
+export function getMarkdownPageFromProps(
+  context: Pick<APIContext, "props">,
+): MarkdownPage | undefined {
+  const page = context.props as Partial<MarkdownPage> | undefined;
+
+  return page?.entry && typeof page.id === "string"
+    ? (page as MarkdownPage)
+    : undefined;
+}
+
 export async function getMarkdownStaticPaths({
   includeRoot,
 }: {
@@ -99,8 +114,9 @@ function renderMarkdownDocument(
     url: pageUrl,
   });
   const body = getMarkdownBody(context, { entry, id });
+  const title = formatMarkdownHeadingText(entry.data.title);
 
-  return `${frontmatter}# ${entry.data.title}\n\n${body.trim()}\n`;
+  return `${frontmatter}# ${title}\n\n${body.trim()}\n`;
 }
 
 function getMarkdownBody(
@@ -148,6 +164,10 @@ function formatYamlFrontmatter({
   }
   yaml += "---\n\n";
   return yaml;
+}
+
+function formatMarkdownHeadingText(title: string) {
+  return title.replace(/\s+/g, " ").trim();
 }
 
 function rewriteMarkdownLinks(
@@ -260,6 +280,10 @@ function rewriteDocsUrl(
   }
 
   try {
+    if (rawUrl.startsWith("/") && isIgnoredPath(rawUrl, "/")) {
+      return rawUrl;
+    }
+
     const normalizedRawUrl =
       siteBase !== "/" &&
       rawUrl.startsWith("/") &&
@@ -278,7 +302,10 @@ function rewriteDocsUrl(
       return rawUrl;
     }
 
-    if (!isInBase(url.pathname, siteBase) || isAssetPath(url.pathname)) {
+    if (
+      !isInBase(url.pathname, siteBase) ||
+      isIgnoredPath(url.pathname, siteBase)
+    ) {
       return rawUrl;
     }
 

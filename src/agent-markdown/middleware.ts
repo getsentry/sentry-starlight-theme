@@ -1,11 +1,11 @@
 import { defineMiddleware } from "astro:middleware";
-import { isAssetPath, isInBase, toMarkdownPath } from "./path-utils";
+import { isIgnoredPath, toMarkdownPath } from "./path-utils";
 import { base as siteBase } from "virtual:sentry-starlight-theme/agent-markdown/config";
 
 export const onRequest = defineMiddleware((context, next) => {
   const { pathname, search } = context.url;
 
-  if (isMarkdownPath(pathname) || isIgnoredPath(pathname)) {
+  if (isMarkdownPath(pathname) || isIgnoredPath(pathname, siteBase)) {
     return next();
   }
 
@@ -28,13 +28,4 @@ function wantsMarkdown(headers: Headers) {
 
 function isMarkdownPath(pathname: string) {
   return pathname.endsWith(".md");
-}
-
-function isIgnoredPath(pathname: string) {
-  return (
-    !isInBase(pathname, siteBase) ||
-    pathname.startsWith("/_") ||
-    pathname.startsWith("/api/") ||
-    isAssetPath(pathname)
-  );
 }

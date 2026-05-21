@@ -1,8 +1,8 @@
 import type { APIContext } from "astro";
 import {
   getMarkdownPageById,
+  getMarkdownPageFromProps,
   getMarkdownStaticPaths,
-  type MarkdownPage,
   renderMarkdownResponse,
 } from "./utils";
 
@@ -23,14 +23,4 @@ export async function GET(context: APIContext) {
   }
 
   return renderMarkdownResponse(context, page);
-}
-
-function getMarkdownPageFromProps(
-  context: APIContext,
-): MarkdownPage | undefined {
-  const page = context.props as Partial<MarkdownPage> | undefined;
-
-  return page?.entry && typeof page.id === "string"
-    ? (page as MarkdownPage)
-    : undefined;
 }

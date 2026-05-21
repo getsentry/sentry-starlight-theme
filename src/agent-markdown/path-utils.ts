@@ -1,8 +1,22 @@
 const ASSET_PATH_PATTERN =
-  /\.(?:avif|bmp|css|gif|ico|jpe?g|js|json|map|pdf|png|svg|txt|xml|webp|woff2?|zip)$/i;
+  /\.(?:avif|bmp|bz2|cjs|css|csv|eot|gif|gz|ico|jpe?g|js|json|map|mjs|mov|mp3|mp4|ogg|otf|pdf|png|svg|tar|tgz|ttf|txt|wasm|wav|webm|webp|woff2?|xml|zip)$/i;
 
 export function isAssetPath(pathname: string) {
   return ASSET_PATH_PATTERN.test(pathname);
+}
+
+export function isIgnoredPath(pathname: string, base: string) {
+  if (!isInBase(pathname, base)) {
+    return true;
+  }
+
+  const relativePathname = stripBase(pathname, base);
+
+  return (
+    relativePathname.startsWith("_") ||
+    relativePathname.startsWith("api/") ||
+    isAssetPath(relativePathname)
+  );
 }
 
 export function isInBase(pathname: string, base: string) {
