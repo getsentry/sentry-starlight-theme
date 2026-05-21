@@ -19,6 +19,8 @@ A link with code in its label should still rewrite: [`code label`](/content/).
 
 Inline HTML examples should not rewrite hrefs inside code: `<a href="/content/">Content</a>`.
 
+HTML entities inside inline code should export decoded text: <code>&lt;section data-state=&quot;open&quot;&gt;</code>.
+
 ```html
 <div data-state="open">Example</div>
 

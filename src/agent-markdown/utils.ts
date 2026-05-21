@@ -750,7 +750,7 @@ function renderSourceFragment(
   }
 
   if (name === "code" && !insidePre) {
-    return `\`${getTextContent(element).trim()}\``;
+    return `\`${getDecodedTextContent(element).replace(/\s+/g, " ").trim()}\``;
   }
 
   return renderSourceChildren(element, childOptions);
@@ -871,7 +871,7 @@ function renderNode(
   }
 
   if (name === "code") {
-    return `\`${renderInlineChildren(element, options)}\``;
+    return `\`${getDecodedTextContent(element).replace(/\s+/g, " ").trim()}\``;
   }
 
   if (name === "pre") {
