@@ -13,14 +13,15 @@ import {
   decodeHtmlEntities,
   formatInlineCodeSpan,
   getCodeFenceLength,
+  getInlineCodeSpans,
   getOpeningFence,
   hasMarkdownHtmlTag,
-  isInsideInlineCode,
   isClosingFence,
   normalizeMarkdown,
   normalizeMarkdownHeadingText,
   rewriteAnchorHrefAttributes,
   type MarkdownFence,
+  type MarkdownInlineCodeSpan,
 } from "./markdown-format";
 import {
   isIgnoredPath,
@@ -212,6 +213,7 @@ function rewriteInlineMarkdownLinks(
     markdown,
     context,
     currentPageId,
+    getInlineCodeSpans(markdown),
   );
 
   return applyOutsideInlineCode(markdownLinksRewritten, (segment) =>
@@ -223,9 +225,11 @@ function rewriteInlineMarkdownLinksInText(
   markdown: string,
   context: Pick<APIContext, "site" | "url">,
   currentPageId: string,
+  inlineCodeSpans: MarkdownInlineCodeSpan[],
 ) {
   let result = "";
   let index = 0;
+  let inlineCodeSpanIndex = 0;
 
   while (index < markdown.length) {
     const linkStart = markdown.indexOf("](", index);
@@ -235,11 +239,20 @@ function rewriteInlineMarkdownLinksInText(
       break;
     }
 
+    while (true) {
+      const span = inlineCodeSpans[inlineCodeSpanIndex];
+      if (!span || span.end > linkStart) {
+        break;
+      }
+
+      inlineCodeSpanIndex += 1;
+    }
+
     const labelStart = findMarkdownLinkLabelStart(markdown, linkStart);
     if (
       labelStart === -1 ||
       labelStart < index ||
-      isInsideInlineCode(markdown, linkStart)
+      isOffsetInsideInlineCode(linkStart, inlineCodeSpans, inlineCodeSpanIndex)
     ) {
       result += markdown.slice(index, linkStart + 2);
       index = linkStart + 2;
@@ -247,8 +260,10 @@ function rewriteInlineMarkdownLinksInText(
     }
 
     const urlStart = linkStart + 2;
-    const urlEnd = findMarkdownUrlEnd(markdown, urlStart, ")");
-    if (urlEnd === -1) {
+    const urlEnd = findInlineMarkdownUrlEnd(markdown, urlStart);
+    const linkEnd =
+      urlEnd === -1 ? -1 : findInlineMarkdownLinkEnd(markdown, urlEnd);
+    if (urlEnd === -1 || linkEnd === -1) {
       result += markdown.slice(index);
       break;
     }
@@ -256,10 +271,20 @@ function rewriteInlineMarkdownLinksInText(
     const url = markdown.slice(urlStart, urlEnd);
     result += markdown.slice(index, urlStart);
     result += rewriteDocsUrl(url, context, currentPageId);
-    index = urlEnd;
+    result += markdown.slice(urlEnd, linkEnd);
+    index = linkEnd;
   }
 
   return result;
+}
+
+function isOffsetInsideInlineCode(
+  offset: number,
+  spans: MarkdownInlineCodeSpan[],
+  spanIndex: number,
+) {
+  const span = spans[spanIndex];
+  return Boolean(span && span.start < offset && offset < span.end);
 }
 
 function rewriteHtmlHrefAttributes(
@@ -311,8 +336,9 @@ function rewriteMarkdownReferenceLinks(
   return markdown
     .split("\n")
     .map((line) => {
-      const labelEnd = line.indexOf("]:");
-      if (!line.startsWith("[") || labelEnd === -1) {
+      const labelStart = line.search(/\S/);
+      const labelEnd = line.indexOf("]:", labelStart + 1);
+      if (labelStart === -1 || line[labelStart] !== "[" || labelEnd === -1) {
         return line;
       }
 
@@ -334,6 +360,108 @@ function rewriteMarkdownReferenceLinks(
       )}${line.slice(urlEnd)}`;
     })
     .join("\n");
+}
+
+function findInlineMarkdownUrlEnd(value: string, start: number) {
+  if (value[start] === "<") {
+    return findAngleMarkdownUrlEnd(value, start);
+  }
+
+  let parenDepth = 0;
+
+  for (let index = start; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (character === "(") {
+      parenDepth += 1;
+      continue;
+    }
+    if (character === ")") {
+      if (parenDepth > 0) {
+        parenDepth -= 1;
+        continue;
+      }
+      return index;
+    }
+    if (parenDepth === 0 && isMarkdownWhitespace(character)) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function findAngleMarkdownUrlEnd(value: string, start: number) {
+  for (let index = start + 1; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (character === ">") {
+      return index + 1;
+    }
+    if (character === "\n") {
+      return -1;
+    }
+  }
+
+  return -1;
+}
+
+function findInlineMarkdownLinkEnd(value: string, start: number) {
+  let index = start;
+  while (isMarkdownWhitespace(value[index])) {
+    index += 1;
+  }
+
+  if (value[index] === ")") {
+    return index;
+  }
+
+  const titleEnd = findMarkdownTitleEnd(value, index);
+  if (titleEnd === -1) {
+    return -1;
+  }
+
+  index = titleEnd + 1;
+  while (isMarkdownWhitespace(value[index])) {
+    index += 1;
+  }
+
+  return value[index] === ")" ? index : -1;
+}
+
+function findMarkdownTitleEnd(value: string, start: number) {
+  const opening = value[start];
+  if (opening !== '"' && opening !== "'" && opening !== "(") {
+    return -1;
+  }
+
+  const closing = opening === "(" ? ")" : opening;
+
+  for (let index = start + 1; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === "\\") {
+      index += 1;
+      continue;
+    }
+    if (character === closing) {
+      return index;
+    }
+    if (character === "\n") {
+      return -1;
+    }
+  }
+
+  return -1;
+}
+
+function isMarkdownWhitespace(character: string | undefined) {
+  return character === " " || character === "\t";
 }
 
 function findMarkdownUrlEnd(value: string, start: number, terminator?: string) {
@@ -402,7 +530,7 @@ function rewriteDocsUrl(
     const currentPageUrl = new URL(getPagePath(currentPageId), baseUrl);
     const url = new URL(rawUrl, currentPageUrl);
 
-    if (rawUrl.match(/^[a-z][a-z\d+.-]*:/i) && url.origin !== baseUrl.origin) {
+    if (url.origin !== baseUrl.origin) {
       return rawUrl;
     }
 
@@ -581,6 +709,16 @@ function renderSourceFragment(
       .trim();
     const href = element.attributes.href;
     return href ? `[${text}](${href})` : text;
+  }
+
+  if (name === "img") {
+    const src = element.attributes.src;
+    if (!src) {
+      return "";
+    }
+
+    const alt = element.attributes.alt ?? "";
+    return `![${alt}](${src})`;
   }
 
   if (name === "code" && !insidePre) {

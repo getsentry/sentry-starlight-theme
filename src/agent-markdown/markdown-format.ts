@@ -3,6 +3,11 @@ export type MarkdownFence = {
   length: number;
 };
 
+export type MarkdownInlineCodeSpan = {
+  end: number;
+  start: number;
+};
+
 export function getOpeningFence(line: string): MarkdownFence | undefined {
   const leadingSpaces = countLeadingSpaces(line);
   if (leadingSpaces > 3) {
@@ -74,13 +79,20 @@ export function hasMarkdownHtmlTag(value: string) {
 }
 
 export function isInsideInlineCode(markdown: string, offset: number) {
+  return getInlineCodeSpans(markdown).some(
+    (span) => span.start < offset && offset < span.end,
+  );
+}
+
+export function getInlineCodeSpans(markdown: string): MarkdownInlineCodeSpan[] {
+  const spans: MarkdownInlineCodeSpan[] = [];
   let index = 0;
 
-  while (index < offset) {
+  while (index < markdown.length) {
     const codeStart = findUnescapedBacktick(markdown, index);
 
-    if (codeStart === -1 || codeStart >= offset) {
-      return false;
+    if (codeStart === -1) {
+      break;
     }
 
     const tickCount = getBacktickRunLength(markdown, codeStart);
@@ -91,17 +103,14 @@ export function isInsideInlineCode(markdown: string, offset: number) {
     );
 
     if (codeEnd === -1) {
-      return false;
+      break;
     }
 
-    if (codeEnd > offset) {
-      return true;
-    }
-
+    spans.push({ end: codeEnd, start: codeStart });
     index = codeEnd;
   }
 
-  return false;
+  return spans;
 }
 
 export function applyOutsideInlineCode(
@@ -110,32 +119,15 @@ export function applyOutsideInlineCode(
 ) {
   let result = "";
   let index = 0;
+  const spans = getInlineCodeSpans(markdown);
 
-  while (index < markdown.length) {
-    const codeStart = findUnescapedBacktick(markdown, index);
-
-    if (codeStart === -1) {
-      result += transform(markdown.slice(index));
-      break;
-    }
-
-    const tickCount = getBacktickRunLength(markdown, codeStart);
-    const codeEnd = findInlineCodeEnd(
-      markdown,
-      codeStart + tickCount,
-      tickCount,
-    );
-
-    if (codeEnd === -1) {
-      result += transform(markdown.slice(index));
-      break;
-    }
-
-    result += transform(markdown.slice(index, codeStart));
-    result += markdown.slice(codeStart, codeEnd);
-    index = codeEnd;
+  for (const span of spans) {
+    result += transform(markdown.slice(index, span.start));
+    result += markdown.slice(span.start, span.end);
+    index = span.end;
   }
 
+  result += transform(markdown.slice(index));
   return result;
 }
 
