@@ -1,46 +1,9 @@
 ---
 import StarlightTableOfContents from "@astrojs/starlight/components/TableOfContents.astro";
+import { toMarkdownPath } from "./path-utils";
 import { base as siteBase } from "virtual:sentry-starlight-theme/agent-markdown/config";
 
-const markdownPath = toMarkdownPath(Astro.url.pathname);
-
-function toMarkdownPath(pathname: string) {
-  const relativePathname = stripBase(pathname, siteBase).replace(/\/+$/, "");
-
-  if (relativePathname === "") {
-    return joinBase(siteBase, "index.md");
-  }
-
-  if (relativePathname.endsWith(".md")) {
-    return joinBase(siteBase, relativePathname);
-  }
-
-  return joinBase(siteBase, `${relativePathname}.md`);
-}
-
-function stripBase(pathname: string, base: string) {
-  if (base === "/") {
-    return pathname.replace(/^\//, "");
-  }
-
-  if (pathname === base) {
-    return "";
-  }
-
-  return pathname.startsWith(`${base}/`)
-    ? pathname.slice(base.length + 1)
-    : pathname.replace(/^\//, "");
-}
-
-function joinBase(base: string, pathname: string) {
-  const normalizedPathname = pathname.replace(/^\/+/, "");
-
-  if (base === "/") {
-    return `/${normalizedPathname}`;
-  }
-
-  return normalizedPathname ? `${base}/${normalizedPathname}` : `${base}/`;
-}
+const markdownPath = toMarkdownPath(Astro.url.pathname, siteBase);
 ---
 
 <StarlightTableOfContents />

@@ -8,6 +8,7 @@ import {
   type Node,
   type TextNode,
 } from "ultrahtml";
+import { isAssetPath, isInBase, joinBase, toMarkdownPath } from "./path-utils";
 import { base as siteBase } from "virtual:sentry-starlight-theme/agent-markdown/config";
 
 type DocsEntry = CollectionEntry<"docs"> & {
@@ -187,7 +188,7 @@ function rewriteDocsUrl(
       return rawUrl;
     }
 
-    if (!isInBase(url.pathname) || isAssetPath(url.pathname)) {
+    if (!isInBase(url.pathname, siteBase) || isAssetPath(url.pathname)) {
       return rawUrl;
     }
 
@@ -203,20 +204,6 @@ function rewriteDocsUrl(
   }
 }
 
-function toMarkdownPath(pathname: string, base: string) {
-  const relativePathname = stripBase(pathname, base).replace(/\/+$/, "");
-
-  if (relativePathname === "") {
-    return joinBase(base, "index.md");
-  }
-
-  if (relativePathname.endsWith(".md")) {
-    return joinBase(base, relativePathname);
-  }
-
-  return joinBase(base, `${relativePathname}.md`);
-}
-
 function getPageUrl(context: Pick<APIContext, "site" | "url">, id: string) {
   const pathname = getPagePath(id);
   return context.site ? new URL(pathname, context.site).href : pathname;
@@ -228,44 +215,6 @@ function getPagePath(id: string) {
 
 function normalizeIndexId(id: string) {
   return id.replace(/(?:^|\/)index$/, "");
-}
-
-function isAssetPath(pathname: string) {
-  return /\.(?:avif|bmp|css|gif|ico|jpe?g|js|json|map|pdf|png|svg|txt|webp|woff2?|zip)$/i.test(
-    pathname,
-  );
-}
-
-function isInBase(pathname: string) {
-  return (
-    siteBase === "/" ||
-    pathname === siteBase ||
-    pathname.startsWith(`${siteBase}/`)
-  );
-}
-
-function stripBase(pathname: string, base: string) {
-  if (base === "/") {
-    return pathname.replace(/^\//, "");
-  }
-
-  if (pathname === base) {
-    return "";
-  }
-
-  return pathname.startsWith(`${base}/`)
-    ? pathname.slice(base.length + 1)
-    : pathname.replace(/^\//, "");
-}
-
-function joinBase(base: string, pathname: string) {
-  const normalizedPathname = pathname.replace(/^\/+/, "");
-
-  if (base === "/") {
-    return `/${normalizedPathname}`;
-  }
-
-  return normalizedPathname ? `${base}/${normalizedPathname}` : `${base}/`;
 }
 
 function stripLeadingH1(markdown: string, title: string) {
@@ -552,7 +501,7 @@ function renderTable(
     currentPageId: string;
   },
 ) {
-  const rows = collectElements(table, "tr").map((row) =>
+  const rows = collectTableRows(table).map((row) =>
     row.children
       .filter(
         (child): child is ElementNode =>
@@ -574,18 +523,32 @@ function renderTable(
     .join("\n")}\n\n`;
 }
 
-function collectElements(element: ElementNode, name: string): ElementNode[] {
-  const matches: ElementNode[] = [];
+function collectTableRows(table: ElementNode): ElementNode[] {
+  const rows: ElementNode[] = [];
+
+  collectRowsFromTableSection(table, rows);
+  return rows;
+}
+
+function collectRowsFromTableSection(
+  element: ElementNode,
+  rows: ElementNode[],
+) {
   for (const child of element.children) {
     if (child.type !== ELEMENT_NODE) {
       continue;
     }
-    if (child.name.toLowerCase() === name) {
-      matches.push(child as ElementNode);
+
+    const name = child.name.toLowerCase();
+    if (name === "tr") {
+      rows.push(child as ElementNode);
+      continue;
     }
-    matches.push(...collectElements(child as ElementNode, name));
+
+    if (["thead", "tbody", "tfoot"].includes(name)) {
+      collectRowsFromTableSection(child as ElementNode, rows);
+    }
   }
-  return matches;
 }
 
 function getTextContent(node: Node): string {
