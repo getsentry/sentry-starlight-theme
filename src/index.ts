@@ -80,28 +80,28 @@ export function sentryStarlightTheme({
           component: "Header",
           componentPath: headerComponent,
           logger,
-          usage: `${packageName}'s Header design`,
+          usage: `use ${packageName}'s Header design`,
         });
         setStarlightComponentOverride({
           components,
           component: "Footer",
           componentPath: footerComponent,
           logger,
-          usage: `${packageName}'s Footer design`,
+          usage: `use ${packageName}'s Footer design`,
         });
         setStarlightComponentOverride({
           components,
           component: "MobileMenuFooter",
           componentPath: mobileMenuFooterComponent,
           logger,
-          usage: `${packageName}'s MobileMenuFooter design`,
+          usage: `use ${packageName}'s MobileMenuFooter design`,
         });
         setStarlightComponentOverride({
           components,
           component: "Pagination",
           componentPath: paginationComponent,
           logger,
-          usage: `${packageName}'s Pagination design`,
+          usage: `use ${packageName}'s Pagination design`,
         });
 
         if (hideThemeSelect) {
