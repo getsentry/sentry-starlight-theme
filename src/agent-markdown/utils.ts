@@ -398,21 +398,11 @@ function rewriteDocsUrl(
   }
 
   try {
-    const normalizedRawUrl =
-      siteBase !== "/" &&
-      rawUrl.startsWith("/") &&
-      rawUrl !== siteBase &&
-      !rawUrl.startsWith(`${siteBase}/`)
-        ? joinBase(siteBase, rawUrl)
-        : rawUrl;
     const baseUrl = context.site ?? new URL(context.url.origin);
     const currentPageUrl = new URL(getPagePath(currentPageId), baseUrl);
-    const url = new URL(normalizedRawUrl, currentPageUrl);
+    const url = new URL(rawUrl, currentPageUrl);
 
-    if (
-      normalizedRawUrl.match(/^[a-z][a-z\d+.-]*:/i) &&
-      url.origin !== baseUrl.origin
-    ) {
+    if (rawUrl.match(/^[a-z][a-z\d+.-]*:/i) && url.origin !== baseUrl.origin) {
       return rawUrl;
     }
 
