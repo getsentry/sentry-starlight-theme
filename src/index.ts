@@ -119,6 +119,29 @@ export function sentryStarlightTheme({
               tag: "style",
               content: "html{background:#0a0a0f}",
             },
+            // Load Rubik (body) and IBM Plex Mono (code) from Google Fonts.
+            {
+              tag: "link",
+              attrs: {
+                rel: "preconnect",
+                href: "https://fonts.googleapis.com",
+              },
+            },
+            {
+              tag: "link",
+              attrs: {
+                rel: "preconnect",
+                href: "https://fonts.gstatic.com",
+                crossorigin: true,
+              },
+            },
+            {
+              tag: "link",
+              attrs: {
+                rel: "stylesheet",
+                href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Rubik:wght@400;500;600;700&display=swap",
+              },
+            },
           ],
           expressiveCode:
             config.expressiveCode === false
