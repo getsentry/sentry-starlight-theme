@@ -21,11 +21,33 @@ export const onRequest = defineMiddleware((context, next) => {
 });
 
 function wantsMarkdown(headers: Headers) {
-  const accept = headers.get("accept")?.toLowerCase() ?? "";
+  const accept = headers.get("accept") ?? "";
 
-  return accept.includes("text/markdown") || accept.includes("text/x-markdown");
+  return accept.split(",").some((entry) => {
+    const [type = "", ...parameters] = entry.trim().toLowerCase().split(";");
+
+    if (type !== "text/markdown" && type !== "text/x-markdown") {
+      return false;
+    }
+
+    return getAcceptQuality(parameters) > 0;
+  });
 }
 
 function isMarkdownPath(pathname: string) {
   return pathname.endsWith(".md");
+}
+
+function getAcceptQuality(parameters: string[]) {
+  for (const parameter of parameters) {
+    const [name, value = ""] = parameter.trim().split("=", 2);
+    if (name !== "q") {
+      continue;
+    }
+
+    const quality = Number.parseFloat(value.trim());
+    return Number.isFinite(quality) ? quality : 1;
+  }
+
+  return 1;
 }
