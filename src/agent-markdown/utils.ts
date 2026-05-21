@@ -24,7 +24,7 @@ export interface MarkdownPage extends Record<string, unknown> {
 
 export async function getMarkdownPages(): Promise<MarkdownPage[]> {
   const entries = (await getCollection("docs", ({ data }: DocsEntry) => {
-    return import.meta.env.MODE !== "production" || data.draft === false;
+    return import.meta.env.MODE !== "production" || data.draft !== true;
   })) as DocsEntry[];
 
   return entries.map((entry: DocsEntry) => ({
@@ -227,7 +227,7 @@ function getPagePath(id: string) {
 }
 
 function normalizeIndexId(id: string) {
-  return id === "index" ? "" : id;
+  return id.replace(/(?:^|\/)index$/, "");
 }
 
 function isAssetPath(pathname: string) {
