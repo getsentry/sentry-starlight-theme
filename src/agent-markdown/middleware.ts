@@ -26,7 +26,8 @@ function wantsMarkdown(headers: Headers) {
   return accept.split(",").some((entry) => {
     const [type = "", ...parameters] = entry.trim().toLowerCase().split(";");
 
-    if (type !== "text/markdown" && type !== "text/x-markdown") {
+    const mediaType = type.trim();
+    if (mediaType !== "text/markdown" && mediaType !== "text/x-markdown") {
       return false;
     }
 

@@ -41,6 +41,15 @@ describe("agent markdown middleware", () => {
     expect(next).not.toHaveBeenCalled();
     expect(rewrite).toHaveBeenCalledOnce();
   });
+
+  it("allows optional whitespace before accept parameters", async () => {
+    const { next, rewrite } = await requestWithAccept(
+      "text/html, text/markdown ; q=1",
+    );
+
+    expect(next).not.toHaveBeenCalled();
+    expect(rewrite).toHaveBeenCalledOnce();
+  });
 });
 
 async function requestWithAccept(accept: string) {
