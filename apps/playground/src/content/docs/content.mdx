@@ -15,6 +15,8 @@ A link with parentheses should survive Markdown export, like [Rust](<https://en.
 
 Plain text that only looks like part of a link should stay literal: compare a](i) and b](i).
 
+Inline HTML examples should not rewrite hrefs inside code: `<a href="/content/">Content</a>`.
+
 ```html
 <div data-state="open">Example</div>
 
@@ -22,6 +24,16 @@ Plain text that only looks like part of a link should stay literal: compare a](i
   Preserve indentation and blank lines.
 </pre>
 ```
+
+```html
+<a href="/content/">Tilde fenced content</a>
+```
+
+````md
+```html
+<a href="/content/">Nested fence content</a>
+```
+````
 
 ## Lists
 

@@ -184,14 +184,6 @@ function rewriteMarkdownLinks(
         rewriteInlineMarkdownLinks(segment, context, currentPageId),
         context,
         currentPageId,
-      ).replace(
-        /\bhref=(["'])([^"']+)\1/g,
-        (match: string, quote: string, url: string) => {
-          const rewritten = rewriteDocsUrl(url, context, currentPageId);
-          return rewritten === url
-            ? match
-            : `href=${quote}${rewritten}${quote}`;
-        },
       ),
     { normalize: false },
   );
@@ -202,26 +194,25 @@ function rewriteInlineMarkdownLinks(
   context: Pick<APIContext, "site" | "url">,
   currentPageId: string,
 ) {
+  return applyOutsideInlineCode(markdown, (segment) =>
+    rewriteHtmlHrefAttributes(
+      rewriteInlineMarkdownLinksInText(segment, context, currentPageId),
+      context,
+      currentPageId,
+    ),
+  );
+}
+
+function rewriteInlineMarkdownLinksInText(
+  markdown: string,
+  context: Pick<APIContext, "site" | "url">,
+  currentPageId: string,
+) {
   let result = "";
   let index = 0;
 
   while (index < markdown.length) {
     const linkStart = markdown.indexOf("](", index);
-    const codeStart = markdown.indexOf("`", index);
-
-    if (codeStart !== -1 && (linkStart === -1 || codeStart < linkStart)) {
-      const tickCount = getBacktickRunLength(markdown, codeStart);
-      const codeEnd = findInlineCodeEnd(
-        markdown,
-        codeStart + tickCount,
-        tickCount,
-      );
-      if (codeEnd !== -1) {
-        result += markdown.slice(index, codeEnd);
-        index = codeEnd;
-        continue;
-      }
-    }
 
     if (linkStart === -1) {
       result += markdown.slice(index);
@@ -246,6 +237,82 @@ function rewriteInlineMarkdownLinks(
     result += markdown.slice(index, urlStart);
     result += rewriteDocsUrl(url, context, currentPageId);
     index = urlEnd;
+  }
+
+  return result;
+}
+
+function rewriteHtmlHrefAttributes(
+  markdown: string,
+  context: Pick<APIContext, "site" | "url">,
+  currentPageId: string,
+) {
+  let result = "";
+  let index = 0;
+
+  while (index < markdown.length) {
+    const hrefStart = markdown.indexOf("href=", index);
+
+    if (hrefStart === -1) {
+      result += markdown.slice(index);
+      break;
+    }
+
+    const quote = markdown[hrefStart + 5];
+    if (quote !== '"' && quote !== "'") {
+      result += markdown.slice(index, hrefStart + 5);
+      index = hrefStart + 5;
+      continue;
+    }
+
+    const urlStart = hrefStart + 6;
+    const urlEnd = markdown.indexOf(quote, urlStart);
+
+    if (urlEnd === -1) {
+      result += markdown.slice(index);
+      break;
+    }
+
+    const url = markdown.slice(urlStart, urlEnd);
+    const rewritten = rewriteDocsUrl(url, context, currentPageId);
+    result += markdown.slice(index, urlStart);
+    result += rewritten;
+    index = urlEnd;
+  }
+
+  return result;
+}
+
+function applyOutsideInlineCode(
+  markdown: string,
+  transform: (segment: string) => string,
+) {
+  let result = "";
+  let index = 0;
+
+  while (index < markdown.length) {
+    const codeStart = markdown.indexOf("`", index);
+
+    if (codeStart === -1) {
+      result += transform(markdown.slice(index));
+      break;
+    }
+
+    const tickCount = getBacktickRunLength(markdown, codeStart);
+    const codeEnd = findInlineCodeEnd(
+      markdown,
+      codeStart + tickCount,
+      tickCount,
+    );
+
+    if (codeEnd === -1) {
+      result += transform(markdown.slice(index));
+      break;
+    }
+
+    result += transform(markdown.slice(index, codeStart));
+    result += markdown.slice(codeStart, codeEnd);
+    index = codeEnd;
   }
 
   return result;
@@ -480,7 +547,9 @@ function cleanSourceMarkdown(markdown: string) {
       .replace(/^export\s.+$/gm, "")
       .replace(/\{"\s+"\}/g, " ");
 
-    return renderSourceFragment(parse(normalized) as Node);
+    return applyOutsideInlineCode(normalized, (htmlSegment) =>
+      renderSourceFragment(parse(htmlSegment) as Node),
+    );
   });
 }
 
@@ -489,24 +558,103 @@ function applyOutsideFencedCode(
   transform: (segment: string) => string,
   { normalize = true }: { normalize?: boolean } = {},
 ) {
-  const fencePattern = /^```[\s\S]*?^```/gm;
   let result = "";
-  let lastIndex = 0;
+  let segment = "";
+  let fence: MarkdownFence | undefined;
+  let index = 0;
 
-  for (const match of markdown.matchAll(fencePattern)) {
-    const index = match.index ?? 0;
-    result += transformMarkdownSegment(markdown.slice(lastIndex, index));
-    result += match[0];
-    lastIndex = index + match[0].length;
+  while (index < markdown.length) {
+    const lineEnd = markdown.indexOf("\n", index);
+    const nextIndex = lineEnd === -1 ? markdown.length : lineEnd + 1;
+    const line = markdown.slice(index, nextIndex);
+
+    if (fence) {
+      result += line;
+
+      if (isClosingFence(line, fence)) {
+        fence = undefined;
+      }
+    } else {
+      const openingFence = getOpeningFence(line);
+
+      if (openingFence) {
+        result += transformMarkdownSegment(segment);
+        segment = "";
+        result += line;
+        fence = openingFence;
+      } else {
+        segment += line;
+      }
+    }
+
+    index = nextIndex;
   }
 
-  result += transformMarkdownSegment(markdown.slice(lastIndex));
+  result += transformMarkdownSegment(segment);
   return normalize ? result.trim() : result;
 
   function transformMarkdownSegment(segment: string) {
     const transformed = transform(segment);
     return normalize ? normalizeMarkdownSegment(transformed) : transformed;
   }
+}
+
+type MarkdownFence = {
+  character: "`" | "~";
+  length: number;
+};
+
+function getOpeningFence(line: string): MarkdownFence | undefined {
+  const leadingSpaces = countLeadingSpaces(line);
+  if (leadingSpaces > 3) {
+    return undefined;
+  }
+
+  const character = line[leadingSpaces];
+  if (character !== "`" && character !== "~") {
+    return undefined;
+  }
+
+  const length = countFenceCharacters(line, leadingSpaces, character);
+  return length >= 3 ? { character, length } : undefined;
+}
+
+function isClosingFence(line: string, fence: MarkdownFence) {
+  const leadingSpaces = countLeadingSpaces(line);
+  if (leadingSpaces > 3) {
+    return false;
+  }
+
+  const length = countFenceCharacters(line, leadingSpaces, fence.character);
+  if (length < fence.length) {
+    return false;
+  }
+
+  return line.slice(leadingSpaces + length).trim() === "";
+}
+
+function countLeadingSpaces(line: string) {
+  let count = 0;
+
+  while (line[count] === " ") {
+    count += 1;
+  }
+
+  return count;
+}
+
+function countFenceCharacters(
+  line: string,
+  start: number,
+  character: "`" | "~",
+) {
+  let count = 0;
+
+  while (line[start + count] === character) {
+    count += 1;
+  }
+
+  return count;
 }
 
 function renderSourceFragment(
@@ -902,7 +1050,12 @@ function normalizeMarkdownSegment(markdown: string) {
   const normalized = normalizeMarkdown(markdown);
 
   if (!normalized) {
-    return "";
+    return "\n".repeat(
+      Math.max(
+        countBoundaryNewlines(markdown, "start"),
+        countBoundaryNewlines(markdown, "end"),
+      ),
+    );
   }
 
   const leadingNewlines = countBoundaryNewlines(markdown, "start");
