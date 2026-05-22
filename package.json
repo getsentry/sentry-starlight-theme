@@ -8,6 +8,11 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./agent-markdown": "./src/agent-markdown.ts",
+    "./agent-markdown/TableOfContents": "./src/agent-markdown/TableOfContents.astro",
+    "./agent-markdown/index-endpoint": "./src/agent-markdown/index-endpoint.ts",
+    "./agent-markdown/slug-endpoint": "./src/agent-markdown/slug-endpoint.ts",
+    "./agent-markdown/middleware": "./src/agent-markdown/middleware.ts",
     "./components/*.astro": "./src/components/*.astro",
     "./styles/index.css": "./src/styles/index.css",
     "./themes/monochrome": "./src/themes/monochrome.ts",
@@ -26,15 +31,18 @@
     "dev": "pnpm --filter @sentry/starlight-theme-playground dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "pnpm run lint:eslint && pnpm run format:check",
+    "lint": "pnpm run lint:oxlint && pnpm run lint:eslint && pnpm run format:check",
     "lint:eslint": "eslint \"**/*.{js,mjs,ts,astro}\"",
-    "lint:fix": "eslint \"**/*.{js,mjs,ts,astro}\" --fix && pnpm run format",
+    "lint:fix": "pnpm run lint:oxlint:fix && eslint \"**/*.{js,mjs,ts,astro}\" --fix && pnpm run format",
+    "lint:oxlint": "oxlint .",
+    "lint:oxlint:fix": "oxlint . --fix",
     "pack:dry": "pnpm pack --dry-run",
     "playground:build": "pnpm --filter @sentry/starlight-theme-playground build",
     "playground:preview": "pnpm --filter @sentry/starlight-theme-playground preview",
     "prepare": "node ./scripts/install-git-hooks.mjs",
     "release:check": "node ./scripts/check-release-config.mjs",
-    "test": "pnpm run release:check && pnpm run typecheck && pnpm run astro:check && pnpm run playground:build && pnpm run pack:dry",
+    "test": "pnpm run release:check && pnpm run test:unit && pnpm run typecheck && pnpm run astro:check && pnpm run playground:build && pnpm run pack:dry",
+    "test:unit": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -49,11 +57,13 @@
     "eslint-plugin-astro": "^1.7.0",
     "globals": "^17.6.0",
     "lint-staged": "^17.0.5",
+    "oxlint": "^1.66.0",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
     "simple-git-hooks": "^2.13.1",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.59.4"
+    "typescript-eslint": "^8.59.4",
+    "vitest": "^4.1.7"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -82,6 +92,7 @@
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,astro}": [
+      "oxlint --fix",
       "eslint --fix",
       "prettier --write"
     ],
@@ -91,6 +102,7 @@
   },
   "dependencies": {
     "@fontsource-variable/rubik": "^5.2.8",
-    "@fontsource/ibm-plex-mono": "^5.2.7"
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "ultrahtml": "^1.6.0"
   }
 }

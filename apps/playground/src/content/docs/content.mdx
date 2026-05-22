@@ -11,6 +11,34 @@ Documentation pages usually mix short conceptual paragraphs with precise impleme
 
 Inline code should hold up inside dense text: `pnpm --filter @sentry/starlight-theme-playground dev`. Long tokens should wrap instead of widening the page: `SENTRY_EXAMPLE_ENVIRONMENT_VARIABLE_WITH_A_REALLY_LONG_NAME`.
 
+A link with parentheses should survive Markdown export, like [Rust](<https://en.wikipedia.org/wiki/Rust_(programming_language)>). Link-like inline code should stay literal: `[do not rewrite](/content/)`.
+
+Plain text that only looks like part of a link should stay literal: compare a](i) and b](i).
+
+A link with code in its label should still rewrite: [`code label`](/content/).
+
+Inline HTML examples should not rewrite hrefs inside code: `<a href="/content/">Content</a>`.
+
+HTML entities inside inline code should export decoded text: <code>&lt;section data-state=&quot;open&quot;&gt;</code>.
+
+```html
+<div data-state="open">Example</div>
+
+<pre>
+  Preserve indentation and blank lines.
+</pre>
+```
+
+```html
+<a href="/content/">Tilde fenced content</a>
+```
+
+````md
+```html
+<a href="/content/">Nested fence content</a>
+```
+````
+
 ## Lists
 
 - Keep spacing compact enough for reference docs.
