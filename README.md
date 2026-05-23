@@ -54,7 +54,7 @@ These repositories use this theme and help define future compatibility requireme
 
 Markdown responses include YAML metadata (`title`, `description`, and `url`), use `text/markdown; charset=utf-8`, and rewrite internal docs links to `.md` URLs when possible. The exporter uses rendered HTML when Astro makes it available and otherwise falls back to normalized source Markdown/MDX, stripping common JSX wrappers and import/export statements.
 
-Markdown pages also include lightweight navigation sections derived from the docs collection and explicit Starlight sidebar config when present. Pages with visible child pages get a `Pages in this section` list. Draft, hidden, and versioned pages are omitted from these lists.
+Markdown pages also include lightweight navigation sections derived from the docs collection and explicit Starlight sidebar config when present. Non-root pages get a `Navigation` section with docs-home and previous/next sibling links, plus a parent link for nested pages. Pages with visible child pages also get a `Pages in this section` list. Draft, hidden, and versioned pages are omitted from these lists.
 
 Disable generated navigation if a site already owns its Markdown index content:
 
@@ -94,6 +94,8 @@ This repo includes a local Starlight playground app at `apps/playground`. It dep
 pnpm install
 pnpm dev
 ```
+
+Treat the playground as the package's visual sandbox. Add or update a playground fixture before changing shared visual behavior, component overrides, or rendered HTML patterns that the Markdown exporter needs to understand. The `Documentation` section in the playground mirrors a consuming docs site and covers theme setup, agent Markdown options, and visual verification checks.
 
 Useful commands:
 

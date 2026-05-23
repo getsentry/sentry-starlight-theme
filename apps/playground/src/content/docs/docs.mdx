@@ -1,0 +1,39 @@
+---
+title: Theme Documentation
+description: Setup and verification notes for Sentry's shared Starlight theme.
+---
+
+Use this section as the sandbox's general docs surface. It should read like a consuming project and remain visually representative of Warden, vitest-evals, and other Sentry docs sites.
+
+## Setup Paths
+
+<div class="api-link-grid">
+  <a class="api-link-card" href="/docs/theme-setup/">
+    <strong>Theme Setup</strong>
+    <span>
+      Install the package, enable the theme plugin, and configure syntax
+      highlighting.
+    </span>
+  </a>
+  <a class="api-link-card" href="/docs/agent-markdown/">
+    <strong>Agent Markdown</strong>
+    <span>
+      Expose `.md` routes, copy actions, content negotiation, and generated
+      navigation.
+    </span>
+  </a>
+  <a class="api-link-card" href="/docs/visual-verification/">
+    <strong>Visual Verification</strong>
+    <span>
+      Check the fixtures before changing shared CSS or markdown conversion
+      behavior.
+    </span>
+  </a>
+</div>
+
+## Sandbox Expectations
+
+- Treat the playground as the canonical visual sandbox for this package.
+- Add a fixture before changing shared visual behavior.
+- Keep site-specific styling in consuming projects, but reproduce reusable patterns here.
+- Verify `.md` output whenever changing rendered HTML to Markdown conversion.

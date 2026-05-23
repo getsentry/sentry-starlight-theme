@@ -1,0 +1,98 @@
+---
+title: Agent Markdown
+description: Configure generated Markdown routes for AI agents and coding tools.
+---
+
+`sentryAgentMarkdown()` generates Markdown versions of Starlight docs pages and adds a Markdown copy action to the table of contents.
+
+```js title="astro.config.mjs"
+import starlight from "@astrojs/starlight";
+import sentryStarlightTheme, {
+  monochromeCodeTheme,
+  sentryAgentMarkdown,
+} from "@sentry/starlight-theme";
+import { defineConfig } from "astro/config";
+
+export default defineConfig({
+  integrations: [
+    starlight({
+      title: "My Sentry project",
+      plugins: [sentryStarlightTheme(), sentryAgentMarkdown()],
+    }),
+  ],
+  markdown: {
+    shikiConfig: {
+      theme: monochromeCodeTheme,
+    },
+  },
+});
+```
+
+## Options
+
+<dl class="sentry-key-value-list">
+  <div>
+    <dt>
+      <code>markdownRoutes</code>
+      <span class="sentry-property-meta">boolean</span>
+    </dt>
+    <dd>
+      Generate static <code>.md</code> routes. Defaults to <code>true</code>.
+    </dd>
+  </div>
+  <div>
+    <dt>
+      <code>markdownActions</code>
+      <span class="sentry-property-meta">boolean</span>
+    </dt>
+    <dd>
+      Add a Markdown copy action below the right-sidebar table of contents.
+      Defaults to <code>true</code>.
+    </dd>
+  </div>
+  <div>
+    <dt>
+      <code>navigation</code>
+      <span class="sentry-property-meta">boolean</span>
+    </dt>
+    <dd>
+      Append child-page navigation to generated Markdown pages. Defaults to{" "}
+      <code>true</code>.
+    </dd>
+  </div>
+  <div>
+    <dt>
+      <code>contentNegotiation</code>
+      <span class="sentry-property-meta">boolean</span>
+    </dt>
+    <dd>
+      Serve Markdown from normal docs URLs when SSR requests prefer Markdown.
+      Defaults to <code>false</code>.
+    </dd>
+  </div>
+</dl>
+
+```js title="agent-markdown-options.js"
+sentryAgentMarkdown({
+  contentNegotiation: true,
+  markdownActions: false,
+});
+```
+
+## Generated Routes
+
+- `/index.md` for the root docs page.
+- `/<slug>.md` for every other docs page.
+- Non-root pages get a `Navigation` section with docs-home and previous/next sibling links.
+- Nested pages also get a parent link.
+- Pages with visible child pages also get a `Pages in this section` list.
+- Draft, hidden, and versioned pages are omitted from generated navigation.
+
+## Markdown Conversion Fixtures
+
+The sandbox includes rendered HTML patterns that should produce readable Markdown:
+
+- `api-link-card` grids become Markdown lists.
+- `sentry-key-value-list` definition lists become compact bullet lists.
+- Expressive Code blocks preserve line breaks and language fences.
+- Starlight heading anchors do not leak screen-reader labels into Markdown.

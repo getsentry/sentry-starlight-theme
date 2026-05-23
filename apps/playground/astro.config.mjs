@@ -26,6 +26,18 @@ export default defineConfig({
             { label: "Code", link: "/code/" },
           ],
         },
+        {
+          label: "Documentation",
+          items: [
+            { label: "Overview", link: "/docs/" },
+            { label: "Theme Setup", link: "/docs/theme-setup/" },
+            { label: "Agent Markdown", link: "/docs/agent-markdown/" },
+            {
+              label: "Visual Verification",
+              link: "/docs/visual-verification/",
+            },
+          ],
+        },
       ],
       social: [
         {

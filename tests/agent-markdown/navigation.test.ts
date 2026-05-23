@@ -240,6 +240,88 @@ describe("agent markdown navigation", () => {
       ].join("\n"),
     );
   });
+
+  it("adds context navigation to leaf child pages", async () => {
+    mocks.sidebar.push({
+      label: "Documentation",
+      items: [
+        { label: "Overview", slug: "docs" },
+        { label: "Theme Setup", slug: "docs/theme-setup" },
+        { label: "Agent Markdown", slug: "docs/agent-markdown" },
+        { label: "Visual Verification", slug: "docs/visual-verification" },
+      ],
+    });
+    const pages = [
+      entry("", "Home"),
+      entry("docs", "Documentation"),
+      entry("docs/theme-setup", "Theme Setup"),
+      entry("docs/agent-markdown", "Agent Markdown"),
+      entry("docs/visual-verification", "Visual Verification"),
+    ];
+    mocks.getCollection.mockResolvedValue(pages);
+
+    const response = await renderMarkdownResponse(
+      {
+        site: new URL("https://example.com"),
+        url: new URL("https://example.com/docs/agent-markdown/"),
+      },
+      {
+        id: "docs/agent-markdown",
+        entry: pages[3],
+      } as never,
+    );
+
+    const text = await response.text();
+
+    expect(text).toContain(
+      [
+        "## Navigation",
+        "",
+        "- [Docs home](https://example.com/docs/index.md)",
+        "- [Parent: Overview](https://example.com/docs/docs.md)",
+        "- [Previous: Theme Setup](https://example.com/docs/docs/theme-setup.md)",
+        "- [Next: Visual Verification](https://example.com/docs/docs/visual-verification.md)",
+      ].join("\n"),
+    );
+    expect(text).not.toContain("## Pages in this section");
+  });
+
+  it("adds sibling navigation to top-level leaf pages", async () => {
+    mocks.sidebar.push({
+      label: "Documentation",
+      items: [
+        { label: "Overview", link: "/docs/guide/" },
+        { label: "Quickstart", link: "/docs/quickstart/" },
+      ],
+    });
+    const pages = [
+      entry("", "Home"),
+      entry("guide", "Overview"),
+      entry("quickstart", "Quickstart"),
+    ];
+    mocks.getCollection.mockResolvedValue(pages);
+
+    const response = await renderMarkdownResponse(
+      {
+        url: new URL("https://example.com/docs/guide/"),
+      },
+      {
+        id: "guide",
+        entry: pages[1],
+      } as never,
+    );
+
+    const text = await response.text();
+
+    expect(text).toContain(
+      [
+        "## Navigation",
+        "",
+        "- [Docs home](/docs/index.md)",
+        "- [Next: Quickstart](/docs/quickstart.md)",
+      ].join("\n"),
+    );
+  });
 });
 
 function entry(id: string, title: string, data: Record<string, unknown> = {}) {

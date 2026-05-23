@@ -6,6 +6,7 @@ interface MarkdownNavNode {
   children: MarkdownNavNode[];
   id: string;
   slug: string;
+  parent?: MarkdownNavNode;
   sidebar?: SidebarNavData;
   page?: MarkdownPage;
 }
@@ -74,6 +75,7 @@ function buildMarkdownNavigationTree(
         node = {
           children: [],
           id: currentId,
+          parent,
           slug: part,
         };
         parent.children.push(node);
@@ -126,6 +128,10 @@ function buildMarkdownNavigationSection(
 ) {
   return renderNavigationSections([
     {
+      heading: "Navigation",
+      items: getContextNavigationLinks(context, node, siteBase),
+    },
+    {
       heading: "Pages in this section",
       items: navLinksFromNodes(
         context,
@@ -165,6 +171,68 @@ function navLinksFromNodes(
       title: getMarkdownNavNodeTitle(node),
       url: getMarkdownPageMarkdownUrl(context, node.page.id, siteBase),
     }));
+}
+
+function getContextNavigationLinks(
+  context: Pick<APIContext, "site" | "url">,
+  node: MarkdownNavNode,
+  siteBase: string,
+): MarkdownNavigationLink[] {
+  if (node.id === "") {
+    return [];
+  }
+
+  const links: MarkdownNavigationLink[] = [];
+  const root = getRootMarkdownNavNode(node);
+
+  if (root.page) {
+    links.push({
+      title: "Docs home",
+      url: getMarkdownPageMarkdownUrl(context, root.page.id, siteBase),
+    });
+  }
+
+  if (node.parent?.page && node.parent.id !== "") {
+    links.push({
+      title: `Parent: ${getMarkdownNavNodeTitle(node.parent)}`,
+      url: getMarkdownPageMarkdownUrl(context, node.parent.page.id, siteBase),
+    });
+  }
+
+  const siblings = getVisibleMarkdownNavChildren(node.parent);
+  const currentIndex = siblings.findIndex((sibling) => sibling.id === node.id);
+  const previous = currentIndex > 0 ? siblings[currentIndex - 1] : undefined;
+  const next =
+    currentIndex !== -1 && currentIndex < siblings.length - 1
+      ? siblings[currentIndex + 1]
+      : undefined;
+
+  if (previous?.page) {
+    links.push({
+      title: `Previous: ${getMarkdownNavNodeTitle(previous)}`,
+      url: getMarkdownPageMarkdownUrl(context, previous.page.id, siteBase),
+    });
+  }
+
+  if (next?.page) {
+    links.push({
+      title: `Next: ${getMarkdownNavNodeTitle(next)}`,
+      url: getMarkdownPageMarkdownUrl(context, next.page.id, siteBase),
+    });
+  }
+
+  return links.filter(
+    (link, index, allLinks) =>
+      allLinks.findIndex((candidate) => candidate.url === link.url) === index,
+  );
+}
+
+function getRootMarkdownNavNode(node: MarkdownNavNode) {
+  while (node.parent) {
+    node = node.parent;
+  }
+
+  return node;
 }
 
 function getVisibleMarkdownNavChildren(node: MarkdownNavNode | undefined) {

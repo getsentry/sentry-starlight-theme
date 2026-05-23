@@ -1,0 +1,49 @@
+---
+title: Visual Verification
+description: Fixtures to check before changing shared theme behavior.
+---
+
+Use these pages before and after changing shared CSS, Starlight component overrides, or Markdown export behavior.
+
+## Fixture Pages
+
+<div class="api-link-grid">
+  <a class="api-link-card" href="/content/">
+    <strong>Content Fixtures</strong>
+    <span>
+      Typography, tables, definition lists, card grids, asides, and long inline
+      code.
+    </span>
+  </a>
+  <a class="api-link-card" href="/code/">
+    <strong>Code Fixtures</strong>
+    <span>
+      Expressive Code frames, terminal examples, tabs, diffs, long lines, and
+      indented pre blocks.
+    </span>
+  </a>
+  <a class="api-link-card" href="/docs/">
+    <strong>Documentation Fixtures</strong>
+    <span>
+      Real setup docs with child-page navigation and generated Markdown routes.
+    </span>
+  </a>
+</div>
+
+## Checks
+
+- Desktop sidebar active states remain visible.
+- Mobile navigation opens without layout overlap.
+- Right-sidebar table of contents and Markdown action stay aligned.
+- Code blocks keep line breaks, indentation, and language labels.
+- Card grids collapse cleanly on narrow viewports.
+- Key/value lists remain readable in HTML and generated Markdown.
+- Generated Markdown routes preserve useful navigation without duplicating headings.
+
+## Commands
+
+```sh
+pnpm dev
+pnpm astro:check
+pnpm playground:build
+```
