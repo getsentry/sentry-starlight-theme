@@ -188,9 +188,7 @@ function compareMarkdownNavNodes(
     return orderDiff;
   }
 
-  return getMarkdownNavNodeTitle(nodeA).localeCompare(
-    getMarkdownNavNodeTitle(nodeB),
-  );
+  return nodeA.id.localeCompare(nodeB.id);
 }
 
 function getMarkdownNavNodeTitle(node: MarkdownNavNode) {
@@ -212,7 +210,7 @@ function getMarkdownNavNodeTitle(node: MarkdownNavNode) {
 
 function getMarkdownNavNodeOrder(node: MarkdownNavNode) {
   if (!node.page) {
-    return 99;
+    return Number.MAX_SAFE_INTEGER;
   }
 
   const data = getPageData(node.page);
@@ -222,7 +220,7 @@ function getMarkdownNavNodeOrder(node: MarkdownNavNode) {
     node.sidebar?.order ??
     getNumberValue(data.sidebar_order) ??
     getNumberValue(sidebar?.order) ??
-    99
+    Number.MAX_SAFE_INTEGER
   );
 }
 
