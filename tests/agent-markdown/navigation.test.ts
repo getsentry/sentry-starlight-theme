@@ -145,6 +145,76 @@ describe("agent markdown navigation", () => {
       ].join("\n"),
     );
   });
+
+  it("orders autogenerate pages relative to explicit sidebar items", async () => {
+    mocks.sidebar.push(
+      { slug: "reference/intro" },
+      { autogenerate: { directory: "reference" } },
+      { slug: "reference/advanced" },
+    );
+    const pages = [
+      entry("reference", "Reference"),
+      entry("reference/intro", "Introduction"),
+      entry("reference/alpha", "Alpha"),
+      entry("reference/beta", "Beta"),
+      entry("reference/advanced", "Advanced"),
+    ];
+    mocks.getCollection.mockResolvedValue(pages);
+
+    const response = await renderMarkdownResponse(
+      {
+        url: new URL("https://example.com/docs/reference/"),
+      },
+      {
+        id: "reference",
+        entry: pages[0],
+      } as never,
+    );
+
+    // intro is explicit (order 0); alpha and beta come from autogenerate
+    // (orders 1-2, alphabetical, skipping the explicit intro/advanced);
+    // advanced is explicit (order 3).
+    await expect(response.text()).resolves.toContain(
+      [
+        "## Pages in this section",
+        "",
+        "- [Introduction](/docs/reference/intro.md)",
+        "- [Alpha](/docs/reference/alpha.md)",
+        "- [Beta](/docs/reference/beta.md)",
+        "- [Advanced](/docs/reference/advanced.md)",
+      ].join("\n"),
+    );
+  });
+
+  it("allows frontmatter to override autogenerate sort position", async () => {
+    mocks.sidebar.push({ autogenerate: { directory: "guide" } });
+    const pages = [
+      entry("guide", "Guide"),
+      entry("guide/alpha", "Alpha", { sidebar: { order: 2 } }),
+      entry("guide/beta", "Beta", { sidebar: { order: 1 } }),
+    ];
+    mocks.getCollection.mockResolvedValue(pages);
+
+    const response = await renderMarkdownResponse(
+      {
+        url: new URL("https://example.com/docs/guide/"),
+      },
+      {
+        id: "guide",
+        entry: pages[0],
+      } as never,
+    );
+
+    // Frontmatter sidebar.order overrides the alphabetical autogenerate order.
+    await expect(response.text()).resolves.toContain(
+      [
+        "## Pages in this section",
+        "",
+        "- [Beta](/docs/guide/beta.md)",
+        "- [Alpha](/docs/guide/alpha.md)",
+      ].join("\n"),
+    );
+  });
 });
 
 function entry(id: string, title: string, data: Record<string, unknown> = {}) {

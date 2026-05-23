@@ -18,6 +18,8 @@ interface MarkdownNavigationLink {
 interface SidebarNavData {
   label?: string;
   order: number;
+  /** True when the order came from an autogenerate block rather than an explicit sidebar entry. */
+  auto?: true;
 }
 
 let navigationTreeCache: MarkdownNavNode | undefined;
@@ -84,7 +86,11 @@ function buildMarkdownNavigationTree(
     parent.page = page;
   }
 
-  for (const [id, sidebar] of getSidebarNavData(sidebarConfig, siteBase)) {
+  for (const [id, sidebar] of getSidebarNavData(
+    sidebarConfig,
+    siteBase,
+    pages,
+  )) {
     const node = nodeById.get(id);
     if (node) {
       node.sidebar = sidebar;
@@ -225,10 +231,17 @@ function getMarkdownNavNodeOrder(node: MarkdownNavNode) {
   const data = getPageData(node.page);
   const sidebar = getSidebarData(node.page);
 
+  // Explicit sidebar entries (slug/link items) take the highest priority.
+  // Autogenerate-derived order is a lower-priority fallback so per-page
+  // frontmatter can still override the generated sort position.
+  const explicitOrder = node.sidebar?.auto ? undefined : node.sidebar?.order;
+  const autoOrder = node.sidebar?.auto ? node.sidebar?.order : undefined;
+
   return (
-    node.sidebar?.order ??
+    explicitOrder ??
     getNumberValue(data.sidebar_order) ??
     getNumberValue(sidebar?.order) ??
+    autoOrder ??
     Number.MAX_SAFE_INTEGER
   );
 }
@@ -273,23 +286,66 @@ function escapeMarkdownLinkLabel(value: string) {
   return value.replace(/([\\[\]])/g, "\\$1");
 }
 
-function getSidebarNavData(sidebarConfig: unknown[], siteBase: string) {
+function getSidebarNavData(
+  sidebarConfig: unknown[],
+  siteBase: string,
+  pages: MarkdownPage[],
+) {
   const navData = new Map<string, SidebarNavData>();
+
+  // Pre-scan explicit item IDs so autogenerate blocks do not claim pages that
+  // are listed elsewhere in the sidebar with an explicit slug or link.
+  const explicitIds = new Set<string>();
+  visitSidebarItems(sidebarConfig, (item) => {
+    const id = getSidebarItemPageId(item, siteBase);
+    if (id !== undefined) {
+      explicitIds.add(id);
+    }
+  });
+
   let order = 0;
 
   visitSidebarItems(sidebarConfig, (item) => {
+    const autogenerate = item.autogenerate;
+
+    if (
+      autogenerate &&
+      typeof autogenerate === "object" &&
+      !Array.isArray(autogenerate)
+    ) {
+      const dir = getStringValue(
+        (autogenerate as Record<string, unknown>).directory,
+      );
+      if (dir) {
+        const prefix = normalizeSidebarPageId(dir);
+        const dirPrefix = prefix ? `${prefix}/` : "";
+        const autoPages = pages
+          .filter(({ id }) =>
+            dirPrefix
+              ? id.startsWith(dirPrefix) && !explicitIds.has(id)
+              : false,
+          )
+          .sort((a, b) => a.id.localeCompare(b.id));
+        for (const { id } of autoPages) {
+          if (!navData.has(id)) {
+            navData.set(id, { order: order++, auto: true });
+          }
+        }
+      }
+      return;
+    }
+
     const id = getSidebarItemPageId(item, siteBase);
     if (id === undefined || navData.has(id)) {
       return;
     }
 
-    const entry: SidebarNavData = { order };
+    const entry: SidebarNavData = { order: order++ };
     const label = getStringValue(item.label);
     if (label) {
       entry.label = label;
     }
     navData.set(id, entry);
-    order += 1;
   });
 
   return navData;
