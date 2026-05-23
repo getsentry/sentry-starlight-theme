@@ -68,6 +68,30 @@ describe("agent markdown middleware", () => {
     expect(rewrite).toHaveBeenCalledOnce();
   });
 
+  it("adds Vary: User-Agent when UA triggered the rewrite", async () => {
+    const { response } = await requestWithHeaders({
+      accept: "text/html",
+      "user-agent": "ClaudeBot",
+    });
+
+    expect(response.headers.get("vary")).toBe("User-Agent");
+  });
+
+  it("does not add Vary: User-Agent for Accept-header triggered rewrites", async () => {
+    const { response } = await requestWithAccept("text/markdown");
+
+    expect(response.headers.get("vary")).toBeNull();
+  });
+
+  it("does not add Vary: User-Agent for format=md overrides", async () => {
+    const { response } = await requestWithHeaders(
+      { accept: "text/html", "user-agent": "ClaudeBot" },
+      "https://example.com/docs/content/?format=md",
+    );
+
+    expect(response.headers.get("vary")).toBeNull();
+  });
+
   it("supports format=md as an explicit request override", async () => {
     const { next, response, rewrite } = await requestWithHeaders(
       { accept: "text/html" },

@@ -2,7 +2,7 @@ import { defineMiddleware } from "astro:middleware";
 import { isIgnoredPath, toMarkdownPath } from "./path-utils";
 import { base as siteBase } from "virtual:sentry-starlight-theme/agent-markdown/config";
 
-export const onRequest = defineMiddleware((context, next) => {
+export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
   const forceMarkdown = context.url.searchParams.get("format") === "md";
 
@@ -10,7 +10,15 @@ export const onRequest = defineMiddleware((context, next) => {
     return next();
   }
 
-  if (!forceMarkdown && !wantsMarkdown(context.request.headers)) {
+  const uaTriggered =
+    !forceMarkdown &&
+    isAIOrDevTool(context.request.headers.get("user-agent") ?? "");
+
+  if (
+    !forceMarkdown &&
+    !uaTriggered &&
+    !acceptsMarkdown(context.request.headers)
+  ) {
     return next();
   }
 
@@ -19,16 +27,20 @@ export const onRequest = defineMiddleware((context, next) => {
   destination.search = search;
   destination.searchParams.delete("format");
 
-  return context.rewrite(destination);
+  const response = await context.rewrite(destination);
+
+  // When the rewrite was triggered by User-Agent rather than an explicit Accept
+  // header or format param, add Vary: User-Agent so caches key on the UA and
+  // don't serve Markdown to regular browsers at the same URL.
+  if (uaTriggered) {
+    response.headers.append("Vary", "User-Agent");
+  }
+
+  return response;
 });
 
-function wantsMarkdown(headers: Headers) {
+function acceptsMarkdown(headers: Headers) {
   const accept = headers.get("accept") ?? "";
-  const userAgent = headers.get("user-agent") ?? "";
-
-  if (isAIOrDevTool(userAgent)) {
-    return true;
-  }
 
   return accept.split(",").some((entry) => {
     const [type = "", ...parameters] = entry.trim().toLowerCase().split(";");
