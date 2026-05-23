@@ -146,6 +146,31 @@ describe("agent markdown navigation", () => {
     );
   });
 
+  it("includes root-level pages when autogenerate directory normalizes to empty", async () => {
+    // directory "/" normalizes to "" — should match top-level pages (no slash in id)
+    mocks.sidebar.push({ autogenerate: { directory: "/" } });
+    const pages = [
+      entry("intro", "Intro"),
+      entry("guide", "Guide"),
+      entry("guide/first", "First"),
+    ];
+    mocks.getCollection.mockResolvedValue(pages);
+
+    const response = await renderMarkdownResponse(
+      { url: new URL("https://example.com/docs/") },
+      {
+        id: "",
+        entry: { data: { title: "Root" }, rendered: { html: "" } },
+      } as never,
+    );
+
+    const text = await response.text();
+    expect(text).toContain("- [Intro]");
+    expect(text).toContain("- [Guide]");
+    // nested page should not appear as a root child
+    expect(text).not.toContain("- [First]");
+  });
+
   it("orders autogenerate pages relative to explicit sidebar items", async () => {
     mocks.sidebar.push(
       { slug: "reference/intro" },

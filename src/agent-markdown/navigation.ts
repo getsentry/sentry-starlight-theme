@@ -323,7 +323,7 @@ function getSidebarNavData(
           .filter(({ id }) =>
             dirPrefix
               ? id.startsWith(dirPrefix) && !explicitIds.has(id)
-              : false,
+              : !id.includes("/") && !explicitIds.has(id),
           )
           .sort((a, b) => a.id.localeCompare(b.id));
         for (const { id } of autoPages) {
