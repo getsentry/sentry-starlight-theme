@@ -25,9 +25,7 @@
   --ve-text: #fafafa;
   --ve-text-secondary: #b8b8b8;
   --ve-text-tertiary: #888;
-  --ve-accent: #8b5cf6;
   --ve-accent-soft: rgba(139, 92, 246, 0.2);
-  --ve-accent-line: rgba(139, 92, 246, 0.42);
   --ve-line-soft: rgba(255, 255, 255, 0.08);
   --ve-line: rgba(255, 255, 255, 0.14);
   --ve-line-strong: rgba(255, 255, 255, 0.28);
@@ -309,7 +307,7 @@ main > .content-panel:first-child h1 {
 .sidebar [aria-current="page"],
 .sidebar [aria-current="page"]:hover,
 .sidebar [aria-current="page"]:focus {
-  background: var(--ve-accent-soft);
+  background: var(--ve-heading-accent);
   color: var(--ve-text);
   font-weight: 650;
 }
