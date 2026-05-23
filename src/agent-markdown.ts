@@ -10,6 +10,7 @@ const tableOfContentsComponent = `${packageName}/agent-markdown/TableOfContents`
 
 interface StarlightUserConfig {
   components?: Record<string, string | undefined>;
+  sidebar?: unknown;
 }
 
 interface StarlightPlugin {
@@ -46,12 +47,17 @@ export interface SentryAgentMarkdownOptions {
    * Add Markdown actions below Starlight's right-sidebar table of contents.
    */
   markdownActions?: boolean;
+  /**
+   * Append navigation sections to Markdown pages with visible child pages.
+   */
+  navigation?: boolean;
 }
 
 export function sentryAgentMarkdown({
   markdownRoutes = true,
   contentNegotiation = false,
   markdownActions = true,
+  navigation = true,
 }: SentryAgentMarkdownOptions = {}): StarlightPlugin {
   return {
     name: pluginName,
@@ -83,7 +89,12 @@ export function sentryAgentMarkdown({
         updateConfig({ components });
 
         addIntegration(
-          agentMarkdownIntegration({ markdownRoutes, contentNegotiation }),
+          agentMarkdownIntegration({
+            markdownRoutes,
+            contentNegotiation,
+            navigation,
+            sidebar: config.sidebar,
+          }),
         );
       },
     },
@@ -93,9 +104,14 @@ export function sentryAgentMarkdown({
 function agentMarkdownIntegration({
   markdownRoutes,
   contentNegotiation,
+  navigation,
+  sidebar,
 }: Required<
-  Pick<SentryAgentMarkdownOptions, "markdownRoutes" | "contentNegotiation">
->): AstroIntegration {
+  Pick<
+    SentryAgentMarkdownOptions,
+    "contentNegotiation" | "markdownRoutes" | "navigation"
+  >
+> & { sidebar: unknown }): AstroIntegration {
   return {
     name: pluginName,
     hooks: {
@@ -113,7 +129,12 @@ function agentMarkdownIntegration({
 
         updateConfig({
           vite: {
-            plugins: [agentMarkdownConfigPlugin(config.base)],
+            plugins: [
+              agentMarkdownConfigPlugin(config.base, {
+                navigation,
+                sidebar,
+              }),
+            ],
           },
         });
 
@@ -145,7 +166,10 @@ const virtualConfigModuleId =
   "virtual:sentry-starlight-theme/agent-markdown/config";
 const resolvedVirtualConfigModuleId = `\0${virtualConfigModuleId}`;
 
-function agentMarkdownConfigPlugin(base: string) {
+function agentMarkdownConfigPlugin(
+  base: string,
+  { navigation, sidebar }: { navigation: boolean; sidebar: unknown },
+) {
   return {
     name: `${pluginName}/config`,
     resolveId(id: string) {
@@ -157,7 +181,11 @@ function agentMarkdownConfigPlugin(base: string) {
     },
     load(id: string) {
       if (id === resolvedVirtualConfigModuleId) {
-        return `export const base = ${JSON.stringify(normalizeBase(base))};`;
+        return [
+          `export const base = ${JSON.stringify(normalizeBase(base))};`,
+          `export const appendNavigation = ${JSON.stringify(navigation)};`,
+          `export const sidebar = ${JSON.stringify(normalizeSidebar(sidebar))};`,
+        ].join("\n");
       }
 
       return undefined;
@@ -171,4 +199,42 @@ function normalizeBase(base: string) {
   }
 
   return `/${base.replace(/^\/|\/$/g, "")}`;
+}
+
+function normalizeSidebar(sidebar: unknown): unknown[] {
+  return Array.isArray(sidebar)
+    ? sidebar.map(normalizeSidebarItem).filter(Boolean)
+    : [];
+}
+
+function normalizeSidebarItem(item: unknown): unknown {
+  if (typeof item === "string") {
+    return item;
+  }
+
+  if (!item || typeof item !== "object" || Array.isArray(item)) {
+    return undefined;
+  }
+
+  const record = item as Record<string, unknown>;
+  const normalized: Record<string, unknown> = {};
+
+  for (const key of ["label", "link", "slug"]) {
+    if (typeof record[key] === "string") {
+      normalized[key] = record[key];
+    }
+  }
+
+  if (Array.isArray(record.items)) {
+    normalized.items = record.items.map(normalizeSidebarItem).filter(Boolean);
+  }
+
+  if (record.autogenerate && typeof record.autogenerate === "object") {
+    const autogenerate = record.autogenerate as Record<string, unknown>;
+    if (typeof autogenerate.directory === "string") {
+      normalized.autogenerate = { directory: autogenerate.directory };
+    }
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
 }

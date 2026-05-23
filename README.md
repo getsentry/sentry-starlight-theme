@@ -35,6 +35,16 @@ export default defineConfig({
 
 The plugin installs the shared CSS, applies the monochrome Expressive Code theme, and overrides Starlight's `ThemeSelect` with an empty component because this theme is intentionally dark-only. Project-level `customCss` is kept after the package CSS so consuming docs sites can make small local adjustments.
 
+## Known consumers
+
+These repositories use this theme and help define future compatibility requirements:
+
+- [getsentry/warden](https://github.com/getsentry/warden)
+- [getsentry/vitest-evals](https://github.com/getsentry/vitest-evals)
+- [getsentry/dotagents](https://github.com/getsentry/dotagents)
+- [getsentry/cli](https://github.com/getsentry/cli)
+- [getsentry/junior](https://github.com/getsentry/junior)
+
 ## Markdown for AI agents
 
 `sentryAgentMarkdown()` generates static `.md` versions of Starlight docs pages for LLM and coding-agent clients:
@@ -43,6 +53,16 @@ The plugin installs the shared CSS, applies the monochrome Expressive Code theme
 - `/<slug>.md` for every other docs page.
 
 Markdown responses include YAML metadata (`title`, `description`, and `url`), use `text/markdown; charset=utf-8`, and rewrite internal docs links to `.md` URLs when possible. The exporter uses rendered HTML when Astro makes it available and otherwise falls back to normalized source Markdown/MDX, stripping common JSX wrappers and import/export statements.
+
+Markdown pages also include lightweight navigation sections derived from the docs collection and explicit Starlight sidebar config when present. Pages with visible child pages get a `Pages in this section` list. Draft, hidden, and versioned pages are omitted from these lists.
+
+Disable generated navigation if a site already owns its Markdown index content:
+
+```js
+sentryAgentMarkdown({
+  navigation: false,
+});
+```
 
 The plugin also adds a copy-to-clipboard Markdown action below Starlight's right-sidebar table of contents. Disable this if a site has its own table-of-contents override:
 
@@ -61,6 +81,8 @@ sentryAgentMarkdown({
 ```
 
 Static deployments cannot vary an already-built HTML page by request headers without platform-level rewrites, so keep content negotiation disabled unless the site runs Astro middleware at request time.
+
+When content negotiation is enabled, the middleware also serves Markdown for `?format=md`, `Accept: text/plain`, and common AI-agent user agents.
 
 This is intentionally lighter weight than Sentry's main docs pipeline, which converts built HTML after the site build. Highly custom MDX components may need site-specific Markdown authoring or a post-build exporter for perfect output.
 

@@ -2,37 +2,75 @@ import { defineMiddleware } from "astro:middleware";
 import { isIgnoredPath, toMarkdownPath } from "./path-utils";
 import { base as siteBase } from "virtual:sentry-starlight-theme/agent-markdown/config";
 
-export const onRequest = defineMiddleware((context, next) => {
+export const onRequest = defineMiddleware(async (context, next) => {
   const { pathname, search } = context.url;
+  const forceMarkdown = context.url.searchParams.get("format") === "md";
 
   if (isMarkdownPath(pathname) || isIgnoredPath(pathname, siteBase)) {
     return next();
   }
 
-  if (!wantsMarkdown(context.request.headers)) {
+  const uaTriggered =
+    !forceMarkdown &&
+    isAIOrDevTool(context.request.headers.get("user-agent") ?? "");
+
+  if (
+    !forceMarkdown &&
+    !uaTriggered &&
+    !acceptsMarkdown(context.request.headers)
+  ) {
     return next();
   }
 
   const destination = new URL(context.url);
   destination.pathname = toMarkdownPath(pathname, siteBase);
   destination.search = search;
+  destination.searchParams.delete("format");
 
-  return context.rewrite(destination);
+  const response = await context.rewrite(destination);
+
+  // When the rewrite was triggered by User-Agent rather than an explicit Accept
+  // header or format param, add Vary: User-Agent so caches key on the UA and
+  // don't serve Markdown to regular browsers at the same URL.
+  if (uaTriggered) {
+    response.headers.append("Vary", "User-Agent");
+  }
+
+  return response;
 });
 
-function wantsMarkdown(headers: Headers) {
+function acceptsMarkdown(headers: Headers) {
   const accept = headers.get("accept") ?? "";
+  if (!accept) {
+    return false;
+  }
 
-  return accept.split(",").some((entry) => {
+  const entries = accept.split(",").map((entry) => {
     const [type = "", ...parameters] = entry.trim().toLowerCase().split(";");
-
-    const mediaType = type.trim();
-    if (mediaType !== "text/markdown" && mediaType !== "text/x-markdown") {
-      return false;
-    }
-
-    return getAcceptQuality(parameters) > 0;
+    return { type: type.trim(), q: getAcceptQuality(parameters) };
   });
+
+  const htmlQuality = entries.find(({ type }) => type === "text/html")?.q ?? 0;
+  const markdownQuality = entries.reduce((max, { type, q }) => {
+    if (
+      type === "text/markdown" ||
+      type === "text/plain" ||
+      type === "text/x-markdown"
+    ) {
+      return Math.max(max, q);
+    }
+    return max;
+  }, 0);
+
+  // Only rewrite when a markdown type is explicitly wanted AND outranks text/html.
+  // Equal quality defers to HTML since that is the native format for these URLs.
+  return markdownQuality > 0 && markdownQuality > htmlQuality;
+}
+
+function isAIOrDevTool(userAgent: string) {
+  return /claude|anthropic|gptbot|chatgpt|openai|cursor|codex|copilot|perplexity|cohere|gemini/i.test(
+    userAgent,
+  );
 }
 
 function isMarkdownPath(pathname: string) {

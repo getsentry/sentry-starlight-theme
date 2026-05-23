@@ -23,13 +23,18 @@ import {
   type MarkdownFence,
   type MarkdownInlineCodeSpan,
 } from "./markdown-format";
+import { buildMarkdownNavigation } from "./navigation";
 import {
   isIgnoredPath,
   isInBase,
   joinBase,
   toMarkdownPath,
 } from "./path-utils";
-import { base as siteBase } from "virtual:sentry-starlight-theme/agent-markdown/config";
+import {
+  appendNavigation,
+  base as siteBase,
+  sidebar,
+} from "virtual:sentry-starlight-theme/agent-markdown/config";
 
 type DocsEntry = CollectionEntry<"docs"> & {
   body?: string;
@@ -104,11 +109,11 @@ export async function getMarkdownStaticPaths({
     }));
 }
 
-export function renderMarkdownResponse(
+export async function renderMarkdownResponse(
   context: Pick<APIContext, "site" | "url">,
   page: MarkdownPage,
-): Response {
-  const markdown = renderMarkdownDocument(context, page);
+): Promise<Response> {
+  const markdown = await renderMarkdownDocument(context, page);
   const filename = `${page.id.split("/").at(-1) || "index"}.md`;
 
   return new Response(markdown, {
@@ -120,20 +125,31 @@ export function renderMarkdownResponse(
   });
 }
 
-function renderMarkdownDocument(
+async function renderMarkdownDocument(
   context: Pick<APIContext, "site" | "url">,
   { entry, id }: MarkdownPage,
-): string {
+): Promise<string> {
+  const page = { entry, id };
   const pageUrl = getPageUrl(context, id);
   const frontmatter = formatYamlFrontmatter({
     title: entry.data.title,
     description: entry.data.description,
     url: pageUrl,
   });
-  const body = getMarkdownBody(context, { entry, id });
+  const body = getMarkdownBody(context, page);
+  const navigation = appendNavigation
+    ? buildMarkdownNavigation(
+        context,
+        page,
+        await getMarkdownPages(),
+        siteBase,
+        sidebar,
+      )
+    : "";
   const title = formatMarkdownHeadingText(entry.data.title);
+  const content = [body.trim(), navigation.trim()].filter(Boolean).join("\n\n");
 
-  return `${frontmatter}# ${title}\n\n${body.trim()}\n`;
+  return `${frontmatter}# ${title}\n\n${content}\n`;
 }
 
 function getMarkdownBody(

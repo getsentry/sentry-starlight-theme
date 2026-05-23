@@ -5,7 +5,9 @@ vi.mock("astro:content", () => ({
 }));
 
 vi.mock("virtual:sentry-starlight-theme/agent-markdown/config", () => ({
+  appendNavigation: false,
   base: "/docs",
+  sidebar: [],
 }));
 
 let renderMarkdownResponse: typeof import("../../src/agent-markdown/utils").renderMarkdownResponse;
@@ -16,7 +18,7 @@ beforeAll(async () => {
 
 describe("renderMarkdownResponse", () => {
   it("does not rewrite root-relative links outside a non-root docs base", async () => {
-    const response = renderMarkdownResponse(
+    const response = await renderMarkdownResponse(
       {
         url: new URL("https://example.com/docs/content/"),
       },
@@ -50,7 +52,7 @@ describe("renderMarkdownResponse", () => {
   });
 
   it("rewrites source markdown links and preserves source images", async () => {
-    const response = renderMarkdownResponse(
+    const response = await renderMarkdownResponse(
       {
         url: new URL("https://example.com/docs/content/"),
       },
