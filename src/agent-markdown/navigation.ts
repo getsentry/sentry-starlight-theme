@@ -20,6 +20,8 @@ interface SidebarNavData {
   order: number;
 }
 
+let navigationTreeCache: MarkdownNavNode | undefined;
+
 export function buildMarkdownNavigation(
   context: Pick<APIContext, "site" | "url">,
   page: MarkdownPage,
@@ -27,8 +29,15 @@ export function buildMarkdownNavigation(
   siteBase: string,
   sidebarConfig: unknown[],
 ) {
-  const root = buildMarkdownNavigationTree(pages, sidebarConfig, siteBase);
-  const node = findMarkdownNavNode(root, splitPageId(page.id));
+  if (!navigationTreeCache || import.meta.env.MODE !== "production") {
+    navigationTreeCache = buildMarkdownNavigationTree(
+      pages,
+      sidebarConfig,
+      siteBase,
+    );
+  }
+
+  const node = findMarkdownNavNode(navigationTreeCache, splitPageId(page.id));
 
   if (!node) {
     return "";
