@@ -41,21 +41,30 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 function acceptsMarkdown(headers: Headers) {
   const accept = headers.get("accept") ?? "";
+  if (!accept) {
+    return false;
+  }
 
-  return accept.split(",").some((entry) => {
+  const entries = accept.split(",").map((entry) => {
     const [type = "", ...parameters] = entry.trim().toLowerCase().split(";");
-
-    const mediaType = type.trim();
-    if (
-      mediaType !== "text/markdown" &&
-      mediaType !== "text/plain" &&
-      mediaType !== "text/x-markdown"
-    ) {
-      return false;
-    }
-
-    return getAcceptQuality(parameters) > 0;
+    return { type: type.trim(), q: getAcceptQuality(parameters) };
   });
+
+  const htmlQuality = entries.find(({ type }) => type === "text/html")?.q ?? 0;
+  const markdownQuality = entries.reduce((max, { type, q }) => {
+    if (
+      type === "text/markdown" ||
+      type === "text/plain" ||
+      type === "text/x-markdown"
+    ) {
+      return Math.max(max, q);
+    }
+    return max;
+  }, 0);
+
+  // Only rewrite when a markdown type is explicitly wanted AND outranks text/html.
+  // Equal quality defers to HTML since that is the native format for these URLs.
+  return markdownQuality > 0 && markdownQuality > htmlQuality;
 }
 
 function isAIOrDevTool(userAgent: string) {

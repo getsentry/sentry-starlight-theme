@@ -44,11 +44,38 @@ describe("agent markdown middleware", () => {
 
   it("allows optional whitespace before accept parameters", async () => {
     const { next, rewrite } = await requestWithAccept(
-      "text/html, text/markdown ; q=1",
+      "text/html;q=0.5, text/markdown ; q=1",
     );
 
     expect(next).not.toHaveBeenCalled();
     expect(rewrite).toHaveBeenCalledOnce();
+  });
+
+  it("does not rewrite when text/html outranks text/plain", async () => {
+    const { next, rewrite } = await requestWithAccept(
+      "text/html, text/plain;q=0.8",
+    );
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(rewrite).not.toHaveBeenCalled();
+  });
+
+  it("rewrites when text/plain outranks text/html", async () => {
+    const { next, rewrite } = await requestWithAccept(
+      "text/html;q=0.5, text/plain",
+    );
+
+    expect(next).not.toHaveBeenCalled();
+    expect(rewrite).toHaveBeenCalledOnce();
+  });
+
+  it("does not rewrite when text/html and text/markdown have equal quality", async () => {
+    const { next, rewrite } = await requestWithAccept(
+      "text/html, text/markdown",
+    );
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(rewrite).not.toHaveBeenCalled();
   });
 
   it("rewrites requests that prefer plain text", async () => {
