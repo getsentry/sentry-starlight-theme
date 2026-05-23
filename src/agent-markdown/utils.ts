@@ -621,9 +621,57 @@ function cleanSourceMarkdown(markdown: string) {
       .replace(/^import\s.+$/gm, "")
       .replace(/^export\s.+$/gm, "")
       .replace(/\{"\s+"\}/g, " ");
+    const htmlBlocksRendered = renderSourceHtmlBlocks(normalized);
 
-    return applyOutsideInlineCode(normalized, renderSourceHtmlSegment);
+    return applyOutsideInlineCode(htmlBlocksRendered, renderSourceHtmlSegment);
   });
+}
+
+function renderSourceHtmlBlocks(markdown: string) {
+  const lines = markdown.split(/(\n)/);
+  let result = "";
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index] ?? "";
+    const blockTag = getSourceHtmlBlockTag(line);
+
+    if (!blockTag) {
+      result += line;
+      index += 1;
+      continue;
+    }
+
+    let block = line;
+    index += 1;
+
+    while (index < lines.length) {
+      const nextLine = lines[index] ?? "";
+      block += nextLine;
+      index += 1;
+
+      if (nextLine.trim() === `</${blockTag}>`) {
+        break;
+      }
+    }
+
+    result += renderSourceHtmlSegment(block);
+  }
+
+  return result;
+}
+
+function getSourceHtmlBlockTag(line: string) {
+  const match = line.match(/^\s*<(div|dl)\b/i);
+  if (!match) {
+    return undefined;
+  }
+
+  const tagName = match[1]?.toLowerCase();
+  return line.includes("api-link-grid") ||
+    line.includes("sentry-key-value-list")
+    ? tagName
+    : undefined;
 }
 
 function renderSourceHtmlSegment(segment: string) {
@@ -747,11 +795,163 @@ function renderSourceFragment(
     );
   }
 
+  if (name === "dl") {
+    return renderSourceDefinitionList(element, childOptions);
+  }
+
+  const linkList = renderSourceLinkListContainer(element, childOptions);
+  if (linkList !== undefined) {
+    return linkList;
+  }
+
   if (name && !sourceHtmlTagNames.has(name)) {
     return renderUnknownSourceHtmlElement(element, childOptions);
   }
 
   return renderSourceChildren(element, childOptions);
+}
+
+function renderSourceDefinitionList(
+  element: ElementNode,
+  options: { insidePre?: boolean; source?: string | undefined },
+) {
+  const items = collectSourceDefinitionItems(element, options);
+  if (items.length === 0) {
+    return "";
+  }
+
+  return `\n\n${items
+    .map(({ term, description }) => `- ${term}: ${description}`)
+    .join("\n")}\n\n`;
+}
+
+function collectSourceDefinitionItems(
+  element: ElementNode,
+  options: { insidePre?: boolean; source?: string | undefined },
+) {
+  const items: { description: string; term: string }[] = [];
+
+  for (const child of element.children) {
+    if (child.type !== ELEMENT_NODE) {
+      continue;
+    }
+
+    const childElement = child as ElementNode;
+    if (childElement.name.toLowerCase() === "div") {
+      const item = sourceDefinitionItemFromChildren(childElement, options);
+      if (item) {
+        items.push(item);
+      }
+    }
+  }
+
+  if (items.length > 0) {
+    return items;
+  }
+
+  let currentTerm = "";
+  for (const child of element.children) {
+    if (child.type !== ELEMENT_NODE) {
+      continue;
+    }
+
+    const childElement = child as ElementNode;
+    const name = childElement.name.toLowerCase();
+    if (name === "dt") {
+      currentTerm = renderSourceDefinitionTerm(childElement, options);
+    } else if (name === "dd" && currentTerm) {
+      items.push({
+        term: currentTerm,
+        description: renderSourceInlineChildren(childElement, options),
+      });
+      currentTerm = "";
+    }
+  }
+
+  return items;
+}
+
+function sourceDefinitionItemFromChildren(
+  element: ElementNode,
+  options: { insidePre?: boolean; source?: string | undefined },
+) {
+  const termElement = element.children.find(
+    (child): child is ElementNode =>
+      child.type === ELEMENT_NODE && child.name.toLowerCase() === "dt",
+  );
+  const descriptionElement = element.children.find(
+    (child): child is ElementNode =>
+      child.type === ELEMENT_NODE && child.name.toLowerCase() === "dd",
+  );
+
+  if (!termElement || !descriptionElement) {
+    return undefined;
+  }
+
+  return {
+    term: renderSourceDefinitionTerm(termElement, options),
+    description: renderSourceInlineChildren(descriptionElement, options),
+  };
+}
+
+function renderSourceDefinitionTerm(
+  element: ElementNode,
+  options: { insidePre?: boolean; source?: string | undefined },
+) {
+  const meaningfulChildren = element.children.filter(isMeaningfulHtmlNode);
+  const parts = meaningfulChildren
+    .map((child) =>
+      renderSourceFragment(child, options).replace(/\s+/g, " ").trim(),
+    )
+    .filter(Boolean);
+
+  if (parts.length === 2 && isMetadataElement(meaningfulChildren[1])) {
+    return `${parts[0]} (${parts[1]})`;
+  }
+
+  return parts.join(" ");
+}
+
+function renderSourceLinkListContainer(
+  element: ElementNode,
+  options: { insidePre?: boolean; source?: string | undefined },
+) {
+  const children = element.children.filter(isMeaningfulHtmlNode);
+  if (
+    children.length === 0 ||
+    !children.every(
+      (child): child is ElementNode =>
+        child.type === ELEMENT_NODE && child.name.toLowerCase() === "a",
+    )
+  ) {
+    return undefined;
+  }
+
+  const items = children.map((child) =>
+    renderSourceBlockLinkListItem(child, options),
+  );
+  return `\n\n${items.filter(Boolean).join("\n")}\n\n`;
+}
+
+function renderSourceBlockLinkListItem(
+  element: ElementNode,
+  options: { insidePre?: boolean; source?: string | undefined },
+) {
+  const href = element.attributes.href;
+  const text = renderSourceInlineChildren(element, options);
+
+  if (!href || !text) {
+    return "";
+  }
+
+  return `- [${escapeMarkdownLinkLabel(text)}](${href})`;
+}
+
+function renderSourceInlineChildren(
+  node: Node,
+  options: { insidePre?: boolean; source?: string | undefined } = {},
+) {
+  return renderSourceChildren(node, options).replace(/\s+/g, " ").trim();
 }
 
 function renderSourceChildren(
@@ -877,6 +1077,11 @@ function renderNode(
 
   const element = node as ElementNode;
   const name = element.name.toLowerCase();
+  const className = element.attributes.class ?? "";
+
+  if (hasClass(className, "sl-anchor-link") || hasClass(className, "sr-only")) {
+    return "";
+  }
 
   if (
     [
@@ -930,10 +1135,12 @@ function renderNode(
       (child): child is ElementNode =>
         child.type === ELEMENT_NODE && child.name.toLowerCase() === "code",
     );
-    const language = getCodeLanguage(codeElement);
-    const code = codeElement
-      ? getDecodedTextContent(codeElement)
-      : getDecodedTextContent(element);
+    const language = getCodeLanguage(codeElement) || getPreLanguage(element);
+    const code =
+      (codeElement && getExpressiveCodeText(codeElement)) ||
+      (codeElement
+        ? getDecodedTextContent(codeElement)
+        : getDecodedTextContent(element));
     const trimmedCode = code.replace(/\n+$/, "");
     const fence = "`".repeat(getCodeFenceLength(trimmedCode));
     return `\n\n${fence}${language}\n${trimmedCode}\n${fence}\n\n`;
@@ -980,7 +1187,235 @@ function renderNode(
     return renderTable(element, options);
   }
 
+  if (name === "dl") {
+    return renderDefinitionList(element, options);
+  }
+
+  const linkList = renderLinkListContainer(element, options);
+  if (linkList !== undefined) {
+    return linkList;
+  }
+
   return renderChildren(element, options);
+}
+
+function renderDefinitionList(
+  element: ElementNode,
+  options: {
+    context: Pick<APIContext, "site" | "url">;
+    currentPageId: string;
+  },
+) {
+  const items = collectDefinitionItems(element, options);
+  if (items.length === 0) {
+    return "";
+  }
+
+  return `\n\n${items
+    .map(({ term, description }) => `- ${term}: ${description}`)
+    .join("\n")}\n\n`;
+}
+
+function collectDefinitionItems(
+  element: ElementNode,
+  options: {
+    context: Pick<APIContext, "site" | "url">;
+    currentPageId: string;
+  },
+) {
+  const items: { description: string; term: string }[] = [];
+
+  for (const child of element.children) {
+    if (child.type !== ELEMENT_NODE) {
+      continue;
+    }
+
+    const childElement = child as ElementNode;
+    const name = childElement.name.toLowerCase();
+
+    if (name === "div") {
+      const item = definitionItemFromChildren(childElement, options);
+      if (item) {
+        items.push(item);
+      }
+    }
+  }
+
+  if (items.length > 0) {
+    return items;
+  }
+
+  let currentTerm = "";
+  for (const child of element.children) {
+    if (child.type !== ELEMENT_NODE) {
+      continue;
+    }
+
+    const childElement = child as ElementNode;
+    const name = childElement.name.toLowerCase();
+    if (name === "dt") {
+      currentTerm = renderDefinitionTerm(childElement, options);
+    } else if (name === "dd" && currentTerm) {
+      items.push({
+        term: currentTerm,
+        description: renderInlineChildren(childElement, options),
+      });
+      currentTerm = "";
+    }
+  }
+
+  return items;
+}
+
+function definitionItemFromChildren(
+  element: ElementNode,
+  options: {
+    context: Pick<APIContext, "site" | "url">;
+    currentPageId: string;
+  },
+) {
+  const termElement = element.children.find(
+    (child): child is ElementNode =>
+      child.type === ELEMENT_NODE && child.name.toLowerCase() === "dt",
+  );
+  const descriptionElement = element.children.find(
+    (child): child is ElementNode =>
+      child.type === ELEMENT_NODE && child.name.toLowerCase() === "dd",
+  );
+
+  if (!termElement || !descriptionElement) {
+    return undefined;
+  }
+
+  return {
+    term: renderDefinitionTerm(termElement, options),
+    description: renderInlineChildren(descriptionElement, options),
+  };
+}
+
+function renderDefinitionTerm(
+  element: ElementNode,
+  options: {
+    context: Pick<APIContext, "site" | "url">;
+    currentPageId: string;
+  },
+) {
+  const parts = element.children
+    .filter(isMeaningfulHtmlNode)
+    .map((child) => renderNode(child, options).replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const meaningfulChildren = element.children.filter(isMeaningfulHtmlNode);
+
+  if (parts.length === 2 && isMetadataElement(meaningfulChildren[1])) {
+    return `${parts[0]} (${parts[1]})`;
+  }
+
+  return parts.join(" ");
+}
+
+function isMetadataElement(node: Node | undefined) {
+  return (
+    node?.type === ELEMENT_NODE &&
+    hasClass(
+      (node as ElementNode).attributes.class ?? "",
+      "sentry-property-meta",
+    )
+  );
+}
+
+function getExpressiveCodeText(codeElement: ElementNode) {
+  const lines: string[] = [];
+
+  collectElementsByClass(codeElement, "ec-line", (line) => {
+    const code = findChildElementByClass(line, "code");
+    lines.push(getDecodedTextContent(code ?? line));
+  });
+
+  return lines.length > 0 ? lines.join("\n") : undefined;
+}
+
+function collectElementsByClass(
+  node: Node,
+  className: string,
+  visit: (element: ElementNode) => void,
+) {
+  if (node.type === ELEMENT_NODE) {
+    const element = node as ElementNode;
+    if (hasClass(element.attributes.class ?? "", className)) {
+      visit(element);
+      return;
+    }
+  }
+
+  if (!("children" in node)) {
+    return;
+  }
+
+  for (const child of node.children as Node[]) {
+    collectElementsByClass(child, className, visit);
+  }
+}
+
+function findChildElementByClass(element: ElementNode, className: string) {
+  return element.children.find(
+    (child): child is ElementNode =>
+      child.type === ELEMENT_NODE &&
+      hasClass((child as ElementNode).attributes.class ?? "", className),
+  );
+}
+
+function hasClass(classValue: string, className: string) {
+  return classValue.split(/\s+/).includes(className);
+}
+
+function renderLinkListContainer(
+  element: ElementNode,
+  options: {
+    context: Pick<APIContext, "site" | "url">;
+    currentPageId: string;
+  },
+) {
+  const children = element.children.filter(isMeaningfulHtmlNode);
+  if (
+    children.length === 0 ||
+    !children.every(
+      (child): child is ElementNode =>
+        child.type === ELEMENT_NODE && child.name.toLowerCase() === "a",
+    )
+  ) {
+    return undefined;
+  }
+
+  const items = children.map((child) =>
+    renderBlockLinkListItem(child, options),
+  );
+  return `\n\n${items.filter(Boolean).join("\n")}\n\n`;
+}
+
+function renderBlockLinkListItem(
+  element: ElementNode,
+  options: {
+    context: Pick<APIContext, "site" | "url">;
+    currentPageId: string;
+  },
+) {
+  const href = element.attributes.href;
+  const text = getDecodedTextContent(element).replace(/\s+/g, " ").trim();
+
+  if (!href || !text) {
+    return "";
+  }
+
+  const url = rewriteDocsUrl(href, options.context, options.currentPageId);
+  return `- [${escapeMarkdownLinkLabel(text)}](${url})`;
+}
+
+function isMeaningfulHtmlNode(node: Node) {
+  return node.type !== TEXT_NODE || (node as TextNode).value.trim() !== "";
+}
+
+function escapeMarkdownLinkLabel(value: string) {
+  return value.replace(/([\\[\]])/g, "\\$1");
 }
 
 function renderListItem(
@@ -1080,6 +1515,10 @@ function getCodeLanguage(codeElement: ElementNode | undefined) {
   const className = codeElement?.attributes.class ?? "";
   const match = className.match(/(?:^|\s)language-([^\s]+)/);
   return match?.[1] ?? "";
+}
+
+function getPreLanguage(preElement: ElementNode) {
+  return preElement.attributes["data-language"] ?? "";
 }
 
 function normalizeMarkdownOutsideFencedCode(markdown: string) {

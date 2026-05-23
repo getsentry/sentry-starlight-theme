@@ -135,6 +135,23 @@ This caution should remain readable even though the theme maps semantic colors t
 
 ## Cards
 
+Use `api-link-card` when a page needs a compact grid of next-step links. These cards also verify the Markdown exporter because Warden and vitest-evals use the same markup for reading paths.
+
+<div class="api-link-grid">
+  <a class="api-link-card" href="/docs/theme-setup/">
+    <strong>Theme Setup</strong>
+    <span>
+      Install the package, configure Starlight, and add the code theme.
+    </span>
+  </a>
+  <a class="api-link-card" href="/docs/agent-markdown/">
+    <strong>Agent Markdown</strong>
+    <span>
+      Generate static `.md` routes and optional Markdown copy actions.
+    </span>
+  </a>
+</div>
+
 <div class="fixture-grid not-content">
   <div class="fixture-panel">
     <strong>Navigation</strong>

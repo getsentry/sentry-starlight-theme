@@ -1,0 +1,68 @@
+---
+title: Theme Setup
+description: Install and configure the shared Sentry Starlight theme.
+---
+
+Install the package with Starlight and Astro:
+
+```sh
+pnpm add @sentry/starlight-theme @astrojs/starlight astro
+```
+
+Add the theme plugin to `starlight()` and use the exported monochrome code theme:
+
+```js title="astro.config.mjs"
+import starlight from "@astrojs/starlight";
+import sentryStarlightTheme, {
+  monochromeCodeTheme,
+} from "@sentry/starlight-theme";
+import { defineConfig } from "astro/config";
+
+export default defineConfig({
+  integrations: [
+    starlight({
+      title: "My Sentry project",
+      plugins: [sentryStarlightTheme()],
+    }),
+  ],
+  markdown: {
+    shikiConfig: {
+      theme: monochromeCodeTheme,
+    },
+  },
+});
+```
+
+## Theme Plugin
+
+`sentryStarlightTheme()` installs the shared CSS, component overrides, dark-only behavior, and Expressive Code defaults.
+
+<dl class="sentry-key-value-list">
+  <div>
+    <dt>
+      <code>hideThemeSelect</code>
+      <span class="sentry-property-meta">boolean</span>
+    </dt>
+    <dd>
+      Hide Starlight's theme selector. Defaults to <code>true</code> because
+      this theme is intentionally dark-only.
+    </dd>
+  </div>
+</dl>
+
+```js title="show-theme-select.js"
+sentryStarlightTheme({
+  hideThemeSelect: false,
+});
+```
+
+## Local CSS
+
+Project `customCss` loads after the shared package CSS. Use it for small product-specific adjustments, not shared theme behavior.
+
+```js title="custom-css.js"
+starlight({
+  customCss: ["./src/styles/docs.css"],
+  plugins: [sentryStarlightTheme()],
+});
+```
