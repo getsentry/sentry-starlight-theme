@@ -52,7 +52,7 @@ Use the shared `CopyPrompt` component in MDX to give readers a collapsible promp
 ```mdx
 import CopyPrompt from "@sentry/starlight-theme/components/CopyPrompt.astro";
 
-<CopyPrompt title="Copy agent instructions">
+<CopyPrompt>
   Review this repository, make the smallest coherent change, and run the project
   checks.
 </CopyPrompt>

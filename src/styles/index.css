@@ -940,7 +940,8 @@ starlight-tabs:not(:where(.not-content *))
   display: flex;
   align-items: center;
   min-height: 3.25rem;
-  padding: 0.75rem 3.5rem 0.75rem 1.1rem;
+  gap: 0.45rem;
+  padding: 0.75rem 3.5rem 0.75rem 0.75rem;
   color: var(--ve-text);
   cursor: pointer;
   font-family: var(--__sl-font-mono);
@@ -951,6 +952,22 @@ starlight-tabs:not(:where(.not-content *))
 
 .sentry-copy-prompt summary::-webkit-details-marker {
   display: none;
+}
+
+.sentry-copy-prompt [data-disclosure-icon] {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transition: transform 120ms ease;
+}
+
+.sentry-copy-prompt[open] [data-disclosure-icon] {
+  transform: rotate(90deg);
 }
 
 .sentry-copy-prompt summary:hover {
@@ -980,7 +997,16 @@ starlight-tabs:not(:where(.not-content *))
   color: var(--ve-text);
 }
 
-.sentry-copy-prompt > button svg {
+.sentry-copy-prompt > button [data-copy-icon] {
+  width: 0.78rem;
+  height: 0.78rem;
+}
+
+.sentry-copy-prompt > button [data-copy-icon]::after {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sentry-copy-prompt > button [data-copied-icon] {
   width: 1rem;
   height: 1rem;
 }
