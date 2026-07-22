@@ -931,16 +931,16 @@ starlight-tabs:not(:where(.not-content *))
 .sentry-copy-prompt {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--ve-line);
+  border: 0;
   border-radius: 8px;
-  background: var(--ve-surface);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .sentry-copy-prompt summary {
   display: flex;
   align-items: center;
   min-height: 3.25rem;
-  padding: 0.75rem 7.25rem 0.75rem 2.6rem;
+  padding: 0.75rem 3.5rem 0.75rem 1.1rem;
   color: var(--ve-text);
   cursor: pointer;
   font-family: var(--__sl-font-mono);
@@ -951,22 +951,6 @@ starlight-tabs:not(:where(.not-content *))
 
 .sentry-copy-prompt summary::-webkit-details-marker {
   display: none;
-}
-
-.sentry-copy-prompt summary::before {
-  position: absolute;
-  left: 1rem;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  content: "";
-  transform: rotate(-45deg);
-  transition: transform 120ms ease;
-}
-
-.sentry-copy-prompt[open] summary::before {
-  transform: rotate(45deg) translate(-2px, -2px);
 }
 
 .sentry-copy-prompt summary:hover {
@@ -980,26 +964,25 @@ starlight-tabs:not(:where(.not-content *))
   right: 0.7rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  min-height: 2rem;
-  border: 1px solid var(--ve-line);
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
   border-radius: 6px;
-  background: var(--ve-surface-raised);
+  background: transparent;
   color: var(--ve-text-secondary);
   cursor: pointer;
-  font: inherit;
-  font-size: 0.78rem;
-  padding: 0.35rem 0.55rem;
+  padding: 0;
 }
 
 .sentry-copy-prompt > button:hover {
-  border-color: var(--ve-line-strong);
+  background: var(--ve-code-control-hover);
   color: var(--ve-text);
 }
 
 .sentry-copy-prompt > button svg {
-  width: 0.9rem;
-  height: 0.9rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 .sentry-copy-prompt [data-copied-icon] {
@@ -1023,8 +1006,8 @@ starlight-tabs:not(:where(.not-content *))
 }
 
 .sentry-copy-prompt-content {
-  padding: 0 1rem 1rem;
-  border-top: 1px solid var(--ve-line-soft);
+  padding: 0 1.1rem 1rem;
+  border-top: 0;
 }
 
 .sentry-copy-prompt-content > :first-child {

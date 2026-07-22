@@ -45,7 +45,6 @@ const {
     >
       <path d="m20 6-11 11-5-5"></path>
     </svg>
-    <span data-copy-prompt-label>Copy</span>
   </button>
   <div class="sentry-copy-prompt-content" data-copy-prompt-content>
     <slot />
@@ -71,12 +70,11 @@ const {
       const content = root.querySelector<HTMLElement>(
         "[data-copy-prompt-content]",
       );
-      const label = root.querySelector<HTMLElement>("[data-copy-prompt-label]");
       const status = root.querySelector<HTMLElement>(
         "[data-copy-prompt-status]",
       );
 
-      if (!button || !content || !label || !status) continue;
+      if (!button || !content || !status) continue;
 
       let resetTimer: number | undefined;
 
@@ -86,17 +84,14 @@ const {
         try {
           await copyText(content.innerText.trim());
           root.dataset.copyPromptState = "copied";
-          label.textContent = "Copied";
           status.textContent = "Prompt copied to clipboard.";
         } catch {
           root.dataset.copyPromptState = "error";
-          label.textContent = "Try again";
           status.textContent = "Could not copy the prompt.";
         }
 
         resetTimer = window.setTimeout(() => {
           delete root.dataset.copyPromptState;
-          label.textContent = "Copy";
           status.textContent = "";
         }, resetDelay);
       });
