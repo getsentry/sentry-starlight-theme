@@ -60,7 +60,7 @@ export const prompt = `Review this repository.
 <CopyPrompt content={prompt} />
 ```
 
-The raw Markdown `content` is rendered in the expanded panel and copied unchanged. Set `open` to expand it initially, or customize the button's accessible name with `copyLabel`.
+The raw Markdown `content` is shown as a code block in the expanded panel and copied unchanged. Set `open` to expand it initially, or customize the button's accessible name with `copyLabel`.
 
 ## Markdown for AI agents
 

@@ -103,7 +103,6 @@
   "dependencies": {
     "@fontsource-variable/rubik": "^5.2.8",
     "@fontsource/ibm-plex-mono": "^5.2.7",
-    "marked": "^18.0.7",
     "ultrahtml": "^1.6.0"
   }
 }

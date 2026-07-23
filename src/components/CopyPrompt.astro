@@ -1,8 +1,6 @@
 ---
-import { marked } from "marked";
-
 export interface Props {
-  /** Raw Markdown to render and copy. */
+  /** Raw Markdown to display and copy. */
   content: string;
   /** Label shown in the collapsed summary. */
   title?: string;
@@ -18,8 +16,6 @@ const {
   copyLabel = "Copy prompt to clipboard",
   open = false,
 } = Astro.props;
-const renderedContent = marked.parse(content);
-const serializedContent = JSON.stringify(content).replaceAll("<", "\\u003c");
 ---
 
 <div class="sentry-copy-prompt">
@@ -27,7 +23,8 @@ const serializedContent = JSON.stringify(content).replaceAll("<", "\\u003c");
     <summary>
       <span>{title}</span>
     </summary>
-    <div class="sentry-copy-prompt-content" set:html={renderedContent} />
+    <pre
+      class="sentry-copy-prompt-content"><code data-copy-prompt-source>{content}</code></pre>
   </details>
   <button type="button" data-copy-prompt-button aria-label={copyLabel}>
     <span class="sentry-copy-icon" aria-hidden="true" data-copy-icon></span>
@@ -48,11 +45,6 @@ const serializedContent = JSON.stringify(content).replaceAll("<", "\\u003c");
     class="sentry-copy-prompt-status"
     data-copy-prompt-status
     aria-live="polite"></span>
-  <script
-    type="application/json"
-    data-copy-prompt-source
-    set:html={serializedContent}
-  />
 </div>
 
 <script>
@@ -67,7 +59,7 @@ const serializedContent = JSON.stringify(content).replaceAll("<", "\\u003c");
       const button = root.querySelector<HTMLButtonElement>(
         "[data-copy-prompt-button]",
       );
-      const source = root.querySelector<HTMLScriptElement>(
+      const source = root.querySelector<HTMLElement>(
         "[data-copy-prompt-source]",
       );
       const status = root.querySelector<HTMLElement>(
@@ -76,7 +68,7 @@ const serializedContent = JSON.stringify(content).replaceAll("<", "\\u003c");
 
       if (!button || !source || !status) continue;
 
-      const content = JSON.parse(source.textContent ?? "") as string;
+      const content = source.textContent ?? "";
 
       let resetTimer: number | undefined;
       let copyAttempt = 0;
