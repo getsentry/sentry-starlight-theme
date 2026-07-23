@@ -73,7 +73,7 @@ const {
         window.clearTimeout(resetTimer);
 
         try {
-          await copyText(content.innerText.trim());
+          await copyText(getPromptText(content));
           root.dataset.copyPromptState = "copied";
           status.textContent = "Prompt copied to clipboard.";
         } catch {
@@ -86,6 +86,19 @@ const {
           status.textContent = "";
         }, resetDelay);
       });
+    }
+  }
+
+  function getPromptText(content: HTMLElement) {
+    const details = content.closest("details");
+    const wasOpen = details?.open ?? true;
+
+    if (details && !wasOpen) details.open = true;
+
+    try {
+      return content.innerText.trim();
+    } finally {
+      if (details && !wasOpen) details.open = false;
     }
   }
 
