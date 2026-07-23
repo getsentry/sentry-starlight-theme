@@ -52,13 +52,15 @@ Use the shared `CopyPrompt` component in MDX to give readers a collapsible promp
 ```mdx
 import CopyPrompt from "@sentry/starlight-theme/components/CopyPrompt.astro";
 
-<CopyPrompt>
-  Review this repository, make the smallest coherent change, and run the project
-  checks.
-</CopyPrompt>
+export const prompt = `Review this repository.
+
+1. Make the **smallest coherent change**.
+2. Run the project checks.`;
+
+<CopyPrompt content={prompt} />
 ```
 
-The default slot is both rendered in the expanded panel and copied as plain text. Set `open` to expand it initially, or customize the button's accessible name with `copyLabel`.
+The raw Markdown `content` is rendered in the expanded panel and copied unchanged. Set `open` to expand it initially, or customize the button's accessible name with `copyLabel`.
 
 ## Markdown for AI agents
 

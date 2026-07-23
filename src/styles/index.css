@@ -1021,8 +1021,7 @@ starlight-tabs:not(:where(.not-content *))
   margin-bottom: 0;
 }
 
-.sentry-copy-prompt-status,
-.sentry-copy-prompt-copy-source {
+.sentry-copy-prompt-status {
   position: fixed;
   left: -10000px;
   width: 1px;
@@ -1031,13 +1030,6 @@ starlight-tabs:not(:where(.not-content *))
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-.sentry-copy-prompt-copy-source {
-  width: 40rem;
-  height: auto;
-  clip: auto;
-  clip-path: none;
 }
 
 .lead {
