@@ -989,17 +989,23 @@ starlight-tabs:not(:where(.not-content *))
   color: #fca5a5;
 }
 
-.sentry-copy-prompt-content {
+.sl-markdown-content .sentry-copy-prompt-content {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
   padding: 0 1.1rem 1rem;
-  border-top: 0;
 }
 
-.sentry-copy-prompt-content > :first-child {
-  margin-top: 1rem;
-}
-
-.sentry-copy-prompt-content > :last-child {
-  margin-bottom: 0;
+.sentry-copy-prompt-content code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  background: transparent;
+  font-size: var(--sl-text-code);
+  line-height: 1.62;
 }
 
 .sentry-copy-prompt-status {
