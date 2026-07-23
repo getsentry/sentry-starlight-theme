@@ -936,6 +936,10 @@ starlight-tabs:not(:where(.not-content *))
   background: rgba(255, 255, 255, 0.04);
 }
 
+.sentry-copy-prompt details {
+  margin: 0;
+}
+
 .sentry-copy-prompt summary {
   display: flex;
   align-items: center;
@@ -948,6 +952,10 @@ starlight-tabs:not(:where(.not-content *))
   font-size: 0.9rem;
   font-weight: 600;
   list-style: none;
+}
+
+.sentry-copy-prompt summary::marker {
+  content: "";
 }
 
 .sentry-copy-prompt summary::-webkit-details-marker {
@@ -966,7 +974,7 @@ starlight-tabs:not(:where(.not-content *))
   transition: transform 120ms ease;
 }
 
-.sentry-copy-prompt[open] [data-disclosure-icon] {
+.sentry-copy-prompt details[open] [data-disclosure-icon] {
   transform: rotate(90deg);
 }
 
@@ -989,6 +997,7 @@ starlight-tabs:not(:where(.not-content *))
   background: transparent;
   color: var(--ve-text-secondary);
   cursor: pointer;
+  margin: 0;
   padding: 0;
 }
 
