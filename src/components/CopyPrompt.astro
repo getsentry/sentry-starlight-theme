@@ -1,0 +1,135 @@
+---
+export interface Props {
+  /** Label shown in the collapsed summary. */
+  title?: string;
+  /** Accessible label for the copy button. */
+  copyLabel?: string;
+  /** Keep the prompt expanded on first render. */
+  open?: boolean;
+}
+
+const {
+  title = "Instructions for your Agent",
+  copyLabel = "Copy prompt to clipboard",
+  open = false,
+} = Astro.props;
+---
+
+<div class="sentry-copy-prompt">
+  <details open={open}>
+    <summary>
+      <span>{title}</span>
+    </summary>
+    <div class="sentry-copy-prompt-content" data-copy-prompt-content>
+      <slot />
+    </div>
+  </details>
+  <button type="button" data-copy-prompt-button aria-label={copyLabel}>
+    <span class="sentry-markdown-action-icon" aria-hidden="true" data-copy-icon
+    ></span>
+    <svg
+      aria-hidden="true"
+      data-copied-icon
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="m20 6-11 11-5-5"></path>
+    </svg>
+  </button>
+  <span
+    class="sentry-copy-prompt-status"
+    data-copy-prompt-status
+    aria-live="polite"></span>
+</div>
+
+<script>
+  const resetDelay = 2000;
+
+  function initializeCopyPrompts() {
+    for (const root of document.querySelectorAll<HTMLElement>(
+      ".sentry-copy-prompt:not([data-copy-prompt-ready])",
+    )) {
+      root.dataset.copyPromptReady = "true";
+
+      const button = root.querySelector<HTMLButtonElement>(
+        "[data-copy-prompt-button]",
+      );
+      const content = root.querySelector<HTMLElement>(
+        "[data-copy-prompt-content]",
+      );
+      const status = root.querySelector<HTMLElement>(
+        "[data-copy-prompt-status]",
+      );
+
+      if (!button || !content || !status) continue;
+
+      let resetTimer: number | undefined;
+      let copyAttempt = 0;
+
+      button.addEventListener("click", async () => {
+        const attempt = ++copyAttempt;
+        window.clearTimeout(resetTimer);
+        delete root.dataset.copyPromptState;
+        status.textContent = "";
+
+        try {
+          await copyText(getPromptText(content));
+          if (attempt !== copyAttempt) return;
+
+          root.dataset.copyPromptState = "copied";
+          status.textContent = "Prompt copied to clipboard.";
+        } catch {
+          if (attempt !== copyAttempt) return;
+
+          root.dataset.copyPromptState = "error";
+          status.textContent = "Could not copy the prompt.";
+        }
+
+        resetTimer = window.setTimeout(() => {
+          delete root.dataset.copyPromptState;
+          status.textContent = "";
+        }, resetDelay);
+      });
+    }
+  }
+
+  function getPromptText(content: HTMLElement) {
+    const renderedCopy = content.cloneNode(true) as HTMLElement;
+    renderedCopy.setAttribute("aria-hidden", "true");
+    renderedCopy.classList.add("sentry-copy-prompt-copy-source");
+    document.body.append(renderedCopy);
+
+    try {
+      return renderedCopy.innerText.trim();
+    } finally {
+      renderedCopy.remove();
+    }
+  }
+
+  async function copyText(text: string) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.append(textarea);
+    textarea.select();
+
+    const copied = document.execCommand("copy");
+    textarea.remove();
+
+    if (!copied) throw new Error("Clipboard copy failed");
+  }
+
+  initializeCopyPrompts();
+  document.addEventListener("astro:page-load", initializeCopyPrompts);
+</script>

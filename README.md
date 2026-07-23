@@ -45,6 +45,21 @@ These repositories use this theme and help define future compatibility requireme
 - [getsentry/cli](https://github.com/getsentry/cli)
 - [getsentry/junior](https://github.com/getsentry/junior)
 
+## Copyable prompts
+
+Use the shared `CopyPrompt` component in MDX to give readers a collapsible prompt with clipboard feedback:
+
+```mdx
+import CopyPrompt from "@sentry/starlight-theme/components/CopyPrompt.astro";
+
+<CopyPrompt>
+  Review this repository, make the smallest coherent change, and run the project
+  checks.
+</CopyPrompt>
+```
+
+The default slot is both rendered in the expanded panel and copied as plain text. Set `open` to expand it initially, or customize the button's accessible name with `copyLabel`.
+
 ## Markdown for AI agents
 
 `sentryAgentMarkdown()` generates static `.md` versions of Starlight docs pages for LLM and coding-agent clients:

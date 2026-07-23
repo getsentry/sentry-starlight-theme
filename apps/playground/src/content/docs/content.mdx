@@ -3,6 +3,8 @@ title: Content Fixtures
 description: Typography, tables, lists, cards, quotes, and semantic content.
 ---
 
+import CopyPrompt from "@sentry/starlight-theme/components/CopyPrompt.astro";
+
 This page exercises the default content surface that Sentry docs sites use most often. It should remain calm, dense, and easy to scan.
 
 ## Paragraphs And Links
@@ -58,6 +60,17 @@ This note checks Starlight's aside styling against the monochrome palette.
 :::caution
 This caution should remain readable even though the theme maps semantic colors to a restrained palette.
 :::
+
+## Copy Prompt
+
+<CopyPrompt>
+  <p>You are working in a Sentry documentation project.</p>
+  <ol>
+    <li>Read the repository instructions before editing.</li>
+    <li>Make the smallest coherent change.</li>
+    <li>Run the project checks and report the results.</li>
+  </ol>
+</CopyPrompt>
 
 ## Quote
 

@@ -928,6 +928,118 @@ starlight-tabs:not(:where(.not-content *))
   color: var(--ve-text);
 }
 
+.sentry-copy-prompt {
+  position: relative;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sl-markdown-content .sentry-copy-prompt details {
+  border-inline-start: 0;
+  margin: 0;
+  padding-inline-start: 1rem;
+}
+
+.sentry-copy-prompt summary {
+  display: flex;
+  align-items: center;
+  min-height: 3.25rem;
+  padding: 0.75rem 3.5rem 0.75rem 0.75rem;
+  border-radius: 8px;
+  color: var(--ve-text);
+  cursor: pointer;
+  font-family: var(--__sl-font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+.sentry-copy-prompt summary:hover {
+  background: var(--ve-surface-hover);
+}
+
+.sentry-copy-prompt > button {
+  position: absolute;
+  z-index: 1;
+  top: 0.65rem;
+  right: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ve-text-tertiary);
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+.sentry-copy-prompt > button:hover {
+  background: var(--ve-code-control-hover);
+  color: var(--ve-text);
+}
+
+.sentry-copy-prompt > button [data-copied-icon] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.sentry-copy-prompt [data-copied-icon] {
+  display: none;
+}
+
+.sentry-copy-prompt[data-copy-prompt-state="copied"] > button {
+  color: #86efac;
+}
+
+.sentry-copy-prompt[data-copy-prompt-state="copied"] [data-copy-icon] {
+  display: none;
+}
+
+.sentry-copy-prompt[data-copy-prompt-state="copied"] [data-copied-icon] {
+  display: block;
+}
+
+.sentry-copy-prompt[data-copy-prompt-state="error"] > button {
+  color: #fca5a5;
+}
+
+.sentry-copy-prompt-content {
+  padding: 0 1.1rem 1rem;
+  border-top: 0;
+}
+
+.sentry-copy-prompt-content > :first-child {
+  margin-top: 1rem;
+}
+
+.sentry-copy-prompt-content > :last-child {
+  margin-bottom: 0;
+}
+
+.sentry-copy-prompt-status,
+.sentry-copy-prompt-copy-source {
+  position: fixed;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sentry-copy-prompt-copy-source {
+  width: 40rem;
+  height: auto;
+  clip: auto;
+  clip-path: none;
+}
+
 .lead {
   max-width: 45rem;
   color: var(--ve-text-secondary);
