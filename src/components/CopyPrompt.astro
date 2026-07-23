@@ -1,5 +1,9 @@
 ---
+import { marked } from "marked";
+
 export interface Props {
+  /** Raw Markdown to render and copy. */
+  content: string;
   /** Label shown in the collapsed summary. */
   title?: string;
   /** Accessible label for the copy button. */
@@ -9,10 +13,13 @@ export interface Props {
 }
 
 const {
+  content,
   title = "Instructions for your Agent",
   copyLabel = "Copy prompt to clipboard",
   open = false,
 } = Astro.props;
+const renderedContent = marked.parse(content);
+const serializedContent = JSON.stringify(content).replaceAll("<", "\\u003c");
 ---
 
 <div class="sentry-copy-prompt">
@@ -20,9 +27,7 @@ const {
     <summary>
       <span>{title}</span>
     </summary>
-    <div class="sentry-copy-prompt-content" data-copy-prompt-content>
-      <slot />
-    </div>
+    <div class="sentry-copy-prompt-content" set:html={renderedContent} />
   </details>
   <button type="button" data-copy-prompt-button aria-label={copyLabel}>
     <span class="sentry-markdown-action-icon" aria-hidden="true" data-copy-icon
@@ -44,6 +49,11 @@ const {
     class="sentry-copy-prompt-status"
     data-copy-prompt-status
     aria-live="polite"></span>
+  <script
+    type="application/json"
+    data-copy-prompt-source
+    set:html={serializedContent}
+  />
 </div>
 
 <script>
@@ -58,14 +68,16 @@ const {
       const button = root.querySelector<HTMLButtonElement>(
         "[data-copy-prompt-button]",
       );
-      const content = root.querySelector<HTMLElement>(
-        "[data-copy-prompt-content]",
+      const source = root.querySelector<HTMLScriptElement>(
+        "[data-copy-prompt-source]",
       );
       const status = root.querySelector<HTMLElement>(
         "[data-copy-prompt-status]",
       );
 
-      if (!button || !content || !status) continue;
+      if (!button || !source || !status) continue;
+
+      const content = JSON.parse(source.textContent ?? "") as string;
 
       let resetTimer: number | undefined;
       let copyAttempt = 0;
@@ -77,7 +89,7 @@ const {
         status.textContent = "";
 
         try {
-          await copyText(getPromptText(content));
+          await copyText(content);
           if (attempt !== copyAttempt) return;
 
           root.dataset.copyPromptState = "copied";
@@ -94,19 +106,6 @@ const {
           status.textContent = "";
         }, resetDelay);
       });
-    }
-  }
-
-  function getPromptText(content: HTMLElement) {
-    const renderedCopy = content.cloneNode(true) as HTMLElement;
-    renderedCopy.setAttribute("aria-hidden", "true");
-    renderedCopy.classList.add("sentry-copy-prompt-copy-source");
-    document.body.append(renderedCopy);
-
-    try {
-      return renderedCopy.innerText.trim();
-    } finally {
-      renderedCopy.remove();
     }
   }
 
