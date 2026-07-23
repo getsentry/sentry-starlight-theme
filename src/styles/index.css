@@ -956,7 +956,7 @@ starlight-tabs:not(:where(.not-content *))
 }
 
 .sentry-copy-prompt summary:hover {
-  background: var(--ve-surface-hover);
+  background: transparent;
 }
 
 .sentry-copy-prompt > button {
