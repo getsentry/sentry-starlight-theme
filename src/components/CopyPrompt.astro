@@ -30,8 +30,7 @@ const serializedContent = JSON.stringify(content).replaceAll("<", "\\u003c");
     <div class="sentry-copy-prompt-content" set:html={renderedContent} />
   </details>
   <button type="button" data-copy-prompt-button aria-label={copyLabel}>
-    <span class="sentry-markdown-action-icon" aria-hidden="true" data-copy-icon
-    ></span>
+    <span class="sentry-copy-icon" aria-hidden="true" data-copy-icon></span>
     <svg
       aria-hidden="true"
       data-copied-icon
