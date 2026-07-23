@@ -930,7 +930,6 @@ starlight-tabs:not(:where(.not-content *))
 
 .sentry-copy-prompt {
   position: relative;
-  overflow: hidden;
   border: 0;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
@@ -947,6 +946,7 @@ starlight-tabs:not(:where(.not-content *))
   align-items: center;
   min-height: 3.25rem;
   padding: 0.75rem 3.5rem 0.75rem 0.75rem;
+  border-radius: 8px;
   color: var(--ve-text);
   cursor: pointer;
   font-family: var(--__sl-font-mono);
@@ -1021,14 +1021,23 @@ starlight-tabs:not(:where(.not-content *))
   margin-bottom: 0;
 }
 
-.sentry-copy-prompt-status {
-  position: absolute;
+.sentry-copy-prompt-status,
+.sentry-copy-prompt-copy-source {
+  position: fixed;
+  left: -10000px;
   width: 1px;
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.sentry-copy-prompt-copy-source {
+  width: 40rem;
+  height: auto;
+  clip: auto;
+  clip-path: none;
 }
 
 .lead {

@@ -98,15 +98,15 @@ const {
   }
 
   function getPromptText(content: HTMLElement) {
-    const details = content.closest("details");
-    const wasOpen = details?.open ?? true;
-
-    if (details && !wasOpen) details.open = true;
+    const renderedCopy = content.cloneNode(true) as HTMLElement;
+    renderedCopy.setAttribute("aria-hidden", "true");
+    renderedCopy.classList.add("sentry-copy-prompt-copy-source");
+    document.body.append(renderedCopy);
 
     try {
-      return content.innerText.trim();
+      return renderedCopy.innerText.trim();
     } finally {
-      if (details && !wasOpen) details.open = false;
+      renderedCopy.remove();
     }
   }
 
