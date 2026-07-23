@@ -939,7 +939,7 @@ starlight-tabs:not(:where(.not-content *))
 .sl-markdown-content .sentry-copy-prompt details {
   border-inline-start: 0;
   margin: 0;
-  padding-inline-start: 0;
+  padding-inline-start: 1rem;
 }
 
 .sentry-copy-prompt summary {
