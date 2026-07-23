@@ -68,15 +68,21 @@ const {
       if (!button || !content || !status) continue;
 
       let resetTimer: number | undefined;
+      let copyAttempt = 0;
 
       button.addEventListener("click", async () => {
+        const attempt = ++copyAttempt;
         window.clearTimeout(resetTimer);
 
         try {
           await copyText(getPromptText(content));
+          if (attempt !== copyAttempt) return;
+
           root.dataset.copyPromptState = "copied";
           status.textContent = "Prompt copied to clipboard.";
         } catch {
+          if (attempt !== copyAttempt) return;
+
           root.dataset.copyPromptState = "error";
           status.textContent = "Could not copy the prompt.";
         }
