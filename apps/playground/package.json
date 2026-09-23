@@ -13,6 +13,6 @@
     "@astrojs/mdx": "^5.0.6",
     "@astrojs/starlight": "^0.39.2",
     "@sentry/starlight-theme": "workspace:*",
-    "astro": "^6.3.5"
+    "astro": "^7.1.0"
   }
 }

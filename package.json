@@ -52,7 +52,7 @@
     "@astrojs/check": "^0.9.9",
     "@astrojs/starlight": "^0.39.2",
     "@eslint/js": "^10.0.1",
-    "astro": "^6.3.5",
+    "astro": "^7.1.0",
     "eslint": "^10.4.0",
     "eslint-plugin-astro": "^1.7.0",
     "globals": "^17.6.0",
