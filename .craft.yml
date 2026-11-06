@@ -1,4 +1,4 @@
-minVersion: 0.23.1
+minVersion: 3.9.0
 changelogPolicy: none
 preReleaseCommand: bash scripts/craft-pre-release.sh
 targets:
