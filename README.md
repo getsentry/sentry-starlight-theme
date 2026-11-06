@@ -130,7 +130,7 @@ Useful commands:
 
 Releases are managed by Craft through GitHub Actions:
 
-- `.github/workflows/release.yml` manually prepares a release PR with `getsentry/action-prepare-release`.
+- `.github/workflows/release.yml` manually prepares a release with `getsentry/craft`. Pick a `bump` (`auto` picks it from conventional commits, `pre` cuts an `-alpha.N` prerelease of that version, or `patch`/`minor`/`major`), or set `version` to an exact version such as `0.10.0-beta.0`.
 - `.github/workflows/merge-jobs.yml` runs after merges to `main` and `release/*`, then uploads the npm tarball artifact named by the commit SHA.
 - `.craft.yml` publishes the `sentry-starlight-theme-<version>.tgz` artifact to npm as `@sentry/starlight-theme` and creates the GitHub release tag.
 
